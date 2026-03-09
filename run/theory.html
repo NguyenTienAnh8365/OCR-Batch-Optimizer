@@ -1,0 +1,1431 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OCR Batch Optimizer</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#040810;--s1:#07101f;--s2:#0b1628;--s3:#101e35;--s4:#162440;
+  --bd:#192840;--bd2:#1f3250;--bd3:#273d62;
+  --blue:#3b82f6;--blue2:#2563eb;--blue3:#1d4ed8;
+  --indigo:#818cf8;--cyan:#06b6d4;
+  --green:#10b981;--yellow:#f59e0b;--red:#ef4444;--purple:#a855f7;
+  --text:#dde8f5;--sub:#7a98b8;--muted:#334d6e;
+  --mono:'JetBrains Mono',monospace;--sans:'Outfit',sans-serif;
+  --r:10px;--r2:7px;
+}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);color:var(--text);font-family:var(--sans);
+  font-size:14px;line-height:1.65;min-height:100vh;overflow-x:hidden;
+}
+/* subtle noise + vignette */
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 900px 600px at 15% 0%,rgba(59,130,246,.055) 0%,transparent 70%),
+    radial-gradient(ellipse 700px 500px at 85% 100%,rgba(129,140,248,.04) 0%,transparent 70%);
+}
+::selection{background:rgba(59,130,246,.28)}
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:2px}
+
+/* ─── SCROLL PROGRESS ─────────────────────────── */
+#prog{
+  position:fixed;top:0;left:0;z-index:10000;
+  height:2px;width:0;
+  background:linear-gradient(90deg,var(--blue),var(--indigo),var(--cyan));
+  transition:width .08s linear;
+  box-shadow:0 0 8px rgba(59,130,246,.6);
+}
+
+/* ─── LAYOUT ──────────────────────────────────── */
+.shell{display:flex;min-height:100vh;position:relative;z-index:1}
+aside{
+  width:228px;flex-shrink:0;position:sticky;top:0;height:100vh;
+  overflow-y:auto;display:flex;flex-direction:column;
+  background:linear-gradient(180deg,var(--s1) 0%,var(--bg) 100%);
+  border-right:1px solid var(--bd);
+}
+.content{flex:1;padding:2rem 2.6rem 7rem;min-width:0;max-width:1180px;margin:0 auto}
+
+/* ─── SIDEBAR LOGO ────────────────────────────── */
+.logo{
+  padding:1.3rem 1.25rem 1.15rem;
+  border-bottom:1px solid var(--bd);
+  position:relative;overflow:hidden;flex-shrink:0;
+}
+.logo::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(59,130,246,.06),transparent 60%);
+  pointer-events:none;
+}
+.logo-badge{
+  display:inline-flex;align-items:center;gap:.38rem;
+  font-family:var(--mono);font-size:.49rem;letter-spacing:.14em;
+  text-transform:uppercase;color:rgba(59,130,246,.85);
+  background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.22);
+  padding:2.5px 8px;border-radius:3px;margin-bottom:.58rem;
+}
+.logo-badge::before{
+  content:'';width:5px;height:5px;border-radius:50%;
+  background:var(--blue);box-shadow:0 0 5px var(--blue);flex-shrink:0;
+}
+.logo h3{
+  font-size:1rem;font-weight:800;line-height:1.28;
+  letter-spacing:-.025em;color:var(--text);
+}
+.logo h3 em{font-style:normal;color:var(--blue)}
+.logo-sub{
+  font-family:var(--mono);font-size:.58rem;color:var(--muted);
+  margin-top:.22rem;letter-spacing:.03em;
+}
+
+/* ─── SIDEBAR NAV ─────────────────────────────── */
+.ng{padding:.55rem .8rem .2rem;flex:1}
+.ng-lbl{
+  font-size:.49rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--muted);padding-left:.55rem;margin:.6rem 0 .28rem;
+}
+.nb{
+  display:flex;align-items:flex-start;gap:.55rem;
+  padding:.38rem .55rem .38rem .7rem;border-radius:7px;
+  font-size:.77rem;color:var(--sub);cursor:pointer;
+  background:none;border:none;width:100%;text-align:left;
+  transition:background .15s,color .15s,padding-left .15s;
+  font-family:var(--sans);line-height:1.3;position:relative;
+}
+/* left accent bar */
+.nb::before{
+  content:'';position:absolute;left:0;top:50%;
+  transform:translateY(-50%);
+  width:2px;height:0;border-radius:2px;
+  background:var(--blue);
+  transition:height .2s cubic-bezier(.4,0,.2,1);
+}
+.nb:hover{background:rgba(255,255,255,.03);color:var(--text);padding-left:.9rem}
+.nb.on{
+  background:linear-gradient(90deg,rgba(59,130,246,.13),rgba(59,130,246,.05));
+  color:var(--blue);font-weight:600;padding-left:.9rem;
+}
+.nb.on::before{height:60%}
+.nb-num{
+  font-family:var(--mono);font-size:.52rem;color:var(--muted);
+  background:var(--s3);border:1px solid var(--bd);border-radius:3px;
+  padding:1.5px 5px;flex-shrink:0;margin-top:2px;
+  transition:all .15s;
+}
+.nb.on .nb-num{
+  background:rgba(59,130,246,.15);border-color:rgba(59,130,246,.28);
+  color:rgba(59,130,246,.9);
+}
+.nb-inner{display:flex;flex-direction:column;gap:.05rem}
+.nb-main{font-weight:500;letter-spacing:-.01em}
+.nb-vi{font-size:.59rem;color:var(--muted);font-weight:400;transition:color .15s}
+.nb.on .nb-vi{color:rgba(59,130,246,.55)}
+.nb:hover .nb-vi{color:var(--sub)}
+
+.aside-foot{
+  padding:.85rem 1.25rem;border-top:1px solid var(--bd);flex-shrink:0;
+  font-family:var(--mono);font-size:.54rem;color:var(--muted);line-height:1.6;
+}
+
+/* ─── TOOLTIP ─────────────────────────────────── */
+.tip-ico{
+  width:15px;height:15px;border-radius:50%;
+  background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.28);
+  display:inline-flex;align-items:center;justify-content:center;
+  cursor:help;font-size:.54rem;color:var(--blue);
+  flex-shrink:0;font-style:normal;font-weight:700;
+  vertical-align:middle;margin-left:3px;user-select:none;line-height:1;
+  transition:all .12s;
+}
+.tip-ico:hover{background:rgba(59,130,246,.22);border-color:rgba(59,130,246,.5)}
+#globalTip{
+  position:fixed;z-index:99999;pointer-events:none;
+  opacity:0;transform:translateY(5px);
+  transition:opacity .14s,transform .14s;
+  background:linear-gradient(145deg,#0d1c35,#091626);
+  border:1px solid #243a5e;border-radius:10px;
+  padding:.72rem 1rem;width:262px;
+  box-shadow:0 22px 60px rgba(0,0,0,.85),inset 0 1px 0 rgba(255,255,255,.04);
+}
+#globalTip.show{opacity:1;transform:translateY(0)}
+#globalTip .tip-en{
+  font-size:.67rem;font-weight:700;color:var(--text);
+  margin-bottom:.28rem;font-family:var(--mono);letter-spacing:.02em;
+}
+#globalTip .tip-vi{font-size:.67rem;color:#6e8fad;line-height:1.65}
+#globalTip .tip-arrow{
+  position:absolute;width:8px;height:8px;
+  background:#0d1c35;
+  bottom:-4px;left:50%;transform:translateX(-50%) rotate(45deg);
+}
+
+/* ─── STATUS BAR ──────────────────────────────── */
+.statusbar{
+  display:flex;align-items:center;gap:.65rem;
+  padding:.52rem .9rem;
+  background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);
+  margin-bottom:1.9rem;position:relative;overflow:hidden;
+}
+.statusbar::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg,rgba(59,130,246,.025),transparent);
+  pointer-events:none;
+}
+.sdot{width:7px;height:7px;border-radius:50%;background:var(--muted);flex-shrink:0;transition:all .35s}
+.sdot.ok{background:var(--green);box-shadow:0 0 7px var(--green)}
+.sdot.err{background:var(--red);box-shadow:0 0 5px var(--red)}
+.sdot.ping{background:var(--yellow);animation:blink .8s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+.stxt{font-family:var(--mono);font-size:.68rem;color:var(--sub);white-space:nowrap;transition:color .3s}
+.urlinp{
+  flex:1;background:var(--s3);border:1px solid var(--bd);border-radius:5px;
+  padding:.28rem .65rem;color:var(--text);font-family:var(--mono);font-size:.68rem;
+  outline:none;transition:border-color .15s,box-shadow .15s;
+}
+.urlinp:focus{border-color:var(--blue);box-shadow:0 0 0 2px rgba(59,130,246,.12)}
+.bsm{
+  padding:.26rem .75rem;border-radius:5px;border:1px solid var(--bd);
+  background:var(--s2);color:var(--sub);font-size:.68rem;cursor:pointer;
+  font-family:var(--mono);transition:all .13s;white-space:nowrap;
+}
+.bsm:hover{border-color:var(--blue);color:var(--blue);background:rgba(59,130,246,.07)}
+
+/* ─── SECTIONS ────────────────────────────────── */
+.sec{
+  margin-bottom:2.8rem;scroll-margin-top:.75rem;
+  opacity:0;transform:translateY(14px);
+  transition:opacity .45s ease,transform .45s ease;
+}
+.sec.vis{opacity:1;transform:none}
+.sech{
+  display:flex;align-items:flex-start;gap:.75rem;
+  margin-bottom:1.2rem;padding-bottom:.7rem;
+  border-bottom:1px solid var(--bd);position:relative;
+}
+.sech::after{
+  content:'';position:absolute;bottom:-1px;left:0;
+  width:48px;height:1px;
+  background:linear-gradient(90deg,var(--blue),transparent);
+}
+.sech-left{display:flex;flex-direction:column;gap:.15rem;flex:1}
+.secn{
+  font-family:var(--mono);font-size:.49rem;font-weight:600;
+  color:var(--blue);opacity:.45;letter-spacing:.12em;text-transform:uppercase;
+}
+.sech h2{font-size:.97rem;font-weight:800;letter-spacing:-.02em}
+.sech-vi{font-size:.7rem;color:var(--muted);font-weight:400}
+
+/* ─── CARD ────────────────────────────────────── */
+.card{
+  background:var(--s1);border:1px solid var(--bd);
+  border-radius:var(--r);margin-bottom:.8rem;
+  transition:border-color .18s;
+}
+.card:hover{border-color:var(--bd2)}
+.cardh{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:.62rem 1.05rem;border-bottom:1px solid var(--bd);
+  background:linear-gradient(90deg,var(--s2),rgba(11,22,40,.9));
+  border-radius:var(--r) var(--r) 0 0;
+}
+.cardt{font-size:.79rem;font-weight:700;display:flex;align-items:center;gap:.42rem;letter-spacing:-.01em}
+.cardt-vi{font-size:.62rem;font-weight:400;color:var(--muted)}
+.cardb{padding:.95rem 1.05rem}
+
+/* ─── FORM ────────────────────────────────────── */
+.frow{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.7rem;margin-bottom:.8rem}
+.fg{display:flex;flex-direction:column;gap:.27rem}
+.flabel{display:flex;align-items:center;gap:.28rem}
+.flabel-en{font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--sub)}
+.flabel-vi{font-size:.58rem;color:var(--muted);font-style:italic}
+input.fi,select.fi,textarea.fi{
+  background:var(--s3);border:1px solid var(--bd);border-radius:var(--r2);
+  padding:.4rem .65rem;color:var(--text);font-family:var(--mono);font-size:.77rem;
+  outline:none;transition:border-color .13s,box-shadow .13s,background .13s;width:100%;
+}
+input.fi:hover,select.fi:hover{border-color:var(--bd2)}
+input.fi:focus,select.fi:focus,textarea.fi:focus{
+  border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,130,246,.1);background:var(--s4);
+}
+textarea.fi{resize:vertical;min-height:100px;line-height:1.55}
+select.fi option{background:#101e35;color:#dde8f5}
+select.fi{cursor:pointer}
+
+/* ─── DATA TABS ───────────────────────────────── */
+.data-tabs{display:flex;gap:.35rem;margin-bottom:.9rem}
+.dtab{
+  padding:.3rem .85rem;border-radius:6px;font-size:.74rem;font-weight:600;
+  cursor:pointer;border:1px solid var(--bd);color:var(--sub);
+  background:var(--s2);transition:all .13s;font-family:var(--sans);
+}
+.dtab:hover{border-color:var(--bd2);color:var(--text)}
+.dtab.on{background:var(--blue);color:#fff;border-color:var(--blue);box-shadow:0 2px 10px rgba(59,130,246,.3)}
+
+/* ─── DATA BUILDER ────────────────────────────── */
+.bsize-block{
+  background:var(--s2);border:1px solid var(--bd);border-radius:9px;
+  padding:.82rem 1rem;margin-bottom:.55rem;
+  transition:border-color .15s,box-shadow .15s;
+}
+.bsize-block:hover{border-color:var(--bd2);box-shadow:0 3px 18px rgba(0,0,0,.28)}
+.bsize-header{display:flex;align-items:center;gap:.55rem;margin-bottom:.7rem}
+.bsize-m{font-family:var(--mono);font-size:.8rem;font-weight:700;color:var(--blue)}
+.bsize-label{font-size:.65rem;color:var(--muted)}
+.bsize-del{
+  margin-left:auto;padding:.18rem .55rem;border-radius:4px;
+  border:1px solid rgba(239,68,68,.25);background:rgba(239,68,68,.05);
+  color:rgba(239,68,68,.65);font-size:.63rem;cursor:pointer;
+  transition:all .13s;font-family:var(--sans);
+}
+.bsize-del:hover{background:rgba(239,68,68,.14);border-color:rgba(239,68,68,.5);color:var(--red)}
+.runs-grid{display:flex;flex-direction:column;gap:.38rem}
+.run-row{display:flex;align-items:center;gap:.5rem}
+.run-num{font-family:var(--mono);font-size:.62rem;color:var(--muted);width:40px;flex-shrink:0}
+.run-vals{flex:1;display:flex;gap:.3rem;flex-wrap:wrap;align-items:center}
+.val-inp{
+  width:70px;background:var(--s3);border:1px solid var(--bd);border-radius:5px;
+  padding:.27rem .42rem;color:var(--text);font-family:var(--mono);font-size:.74rem;
+  outline:none;transition:all .12s;text-align:center;
+}
+.val-inp:hover{border-color:var(--bd2)}
+.val-inp:focus{border-color:var(--blue);box-shadow:0 0 0 2px rgba(59,130,246,.1)}
+.val-wrapper{display:inline-flex;align-items:center;gap:1px}
+.val-del{
+  width:14px;height:14px;border-radius:3px;
+  border:1px solid rgba(239,68,68,.2);background:rgba(239,68,68,.04);
+  color:rgba(239,68,68,.55);font-size:.55rem;cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:0;transition:all .12s;flex-shrink:0;
+}
+.val-del:hover{background:rgba(239,68,68,.16);border-color:var(--red);color:var(--red)}
+.run-add-val{
+  padding:.22rem .5rem;border-radius:4px;
+  border:1px dashed rgba(6,182,212,.28);background:transparent;
+  color:rgba(6,182,212,.45);font-size:.61rem;cursor:pointer;
+  transition:all .13s;font-family:var(--sans);
+}
+.run-add-val:hover{border-color:var(--cyan);color:var(--cyan);background:rgba(6,182,212,.06)}
+.run-del{
+  padding:.2rem .44rem;border-radius:4px;border:1px solid rgba(239,68,68,.14);
+  background:transparent;color:var(--muted);font-size:.6rem;cursor:pointer;transition:all .13s;font-family:var(--sans);
+}
+.run-del:hover{border-color:rgba(239,68,68,.4);color:var(--red)}
+.add-run-btn{
+  display:inline-flex;align-items:center;gap:.35rem;padding:.3rem .75rem;
+  border-radius:5px;border:1px dashed var(--bd2);background:transparent;
+  color:var(--muted);font-size:.7rem;cursor:pointer;transition:all .13s;
+  font-family:var(--sans);margin-top:.5rem;
+}
+.add-run-btn:hover{border-color:var(--green);color:var(--green);background:rgba(16,185,129,.05)}
+.add-bsize-btn{
+  display:inline-flex;align-items:center;gap:.38rem;padding:.38rem .9rem;
+  border-radius:6px;border:1px dashed rgba(59,130,246,.38);
+  background:rgba(59,130,246,.055);color:var(--blue);font-size:.77rem;
+  cursor:pointer;transition:all .14s;font-family:var(--sans);font-weight:600;
+}
+.add-bsize-btn:hover{background:rgba(59,130,246,.12);border-color:var(--blue);box-shadow:0 0 12px rgba(59,130,246,.12)}
+.json-preview{
+  background:var(--bg);border:1px solid var(--bd);border-radius:var(--r2);
+  padding:.75rem 1rem;font-family:var(--mono);font-size:.7rem;color:var(--sub);
+  white-space:pre;overflow-x:auto;max-height:180px;overflow-y:auto;line-height:1.6;
+}
+.preview-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.4rem}
+.preview-lbl{font-size:.58rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
+
+/* ─── BUTTONS ─────────────────────────────────── */
+.btn{
+  display:inline-flex;align-items:center;gap:.4rem;padding:.48rem 1.1rem;
+  border-radius:7px;border:none;font-size:.8rem;font-weight:700;cursor:pointer;
+  transition:all .14s cubic-bezier(.4,0,.2,1);font-family:var(--sans);
+  letter-spacing:.01em;position:relative;overflow:hidden;
+}
+.btn:active{transform:scale(.96)}
+.btn:disabled{opacity:.32;cursor:not-allowed}
+.btn-p{
+  background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;
+  box-shadow:0 2px 10px rgba(59,130,246,.28);
+}
+.btn-p:hover:not(:disabled){
+  box-shadow:0 4px 18px rgba(59,130,246,.42);transform:translateY(-1px);
+}
+.btn-g{background:var(--s2);border:1px solid var(--bd);color:var(--sub)}
+.btn-g:hover:not(:disabled){border-color:var(--blue);color:var(--blue);background:rgba(59,130,246,.06)}
+.spin{
+  display:inline-block;width:12px;height:12px;
+  border:2px solid rgba(255,255,255,.18);border-top-color:#fff;
+  border-radius:50%;animation:sp .5s linear infinite;
+}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* ─── TABLE ───────────────────────────────────── */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.74rem}
+th{
+  background:var(--s2);color:var(--sub);font-weight:600;font-size:.6rem;
+  text-transform:uppercase;letter-spacing:.045em;padding:.48rem .8rem;
+  text-align:left;border-bottom:1px solid var(--bd);white-space:nowrap;
+}
+td{
+  padding:.4rem .8rem;border-bottom:1px solid rgba(255,255,255,.018);
+  color:var(--sub);font-family:var(--mono);font-size:.73rem;white-space:nowrap;
+  transition:background .1s;
+}
+tr:hover td{background:rgba(59,130,246,.03)}
+tr.opt td{background:rgba(59,130,246,.07);color:var(--text)}
+tr.opt td:first-child{border-left:2px solid var(--blue)}
+tr.opt:hover td{background:rgba(59,130,246,.1)}
+.tag{display:inline-flex;align-items:center;font-size:.57rem;padding:1.5px 6px;border-radius:3px;font-weight:600;letter-spacing:.03em}
+.tm{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.18);color:var(--green)}
+.te{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.18);color:var(--yellow)}
+.to{background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.22);color:var(--blue)}
+
+/* ─── METRICS GRID ────────────────────────────── */
+.mg{display:grid;grid-template-columns:repeat(auto-fit,minmax(108px,1fr));gap:.52rem;margin:.75rem 0}
+.mc{
+  background:var(--s2);border:1px solid var(--bd);border-radius:9px;
+  padding:.65rem .8rem;text-align:center;
+  transition:border-color .15s,transform .15s,box-shadow .15s;
+  position:relative;overflow:hidden;
+}
+.mc::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(145deg,rgba(255,255,255,.018),transparent);
+  pointer-events:none;
+}
+.mc:hover{border-color:var(--bd2);transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,0,0,.3)}
+.mv{font-family:var(--mono);font-size:1.1rem;font-weight:700;color:var(--blue);line-height:1.2;margin-bottom:.18rem;letter-spacing:-.02em}
+.mv.g{color:var(--green)}.mv.y{color:var(--yellow)}.mv.c{color:var(--cyan)}.mv.r{color:var(--red)}
+.ml{font-size:.52rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+
+/* ─── BANNER ──────────────────────────────────── */
+.banner{
+  background:linear-gradient(120deg,rgba(59,130,246,.1),rgba(129,140,248,.055),rgba(6,182,212,.03));
+  border:1px solid rgba(59,130,246,.22);border-radius:var(--r);
+  padding:1rem 1.25rem;margin-bottom:.8rem;position:relative;overflow:hidden;
+}
+.banner::before{
+  content:'';position:absolute;top:-40%;right:-8%;
+  width:180px;height:180px;border-radius:50%;
+  background:radial-gradient(circle,rgba(59,130,246,.07),transparent 65%);
+  pointer-events:none;
+}
+.bn-top{display:flex;align-items:baseline;gap:.75rem;margin-bottom:.35rem;flex-wrap:wrap}
+.bn-m{font-family:var(--mono);font-size:2.1rem;font-weight:700;color:var(--blue);line-height:1;letter-spacing:-.04em}
+.bn-sub{font-size:.72rem;color:var(--sub)}
+.bn-stats{display:flex;gap:1.2rem;flex-wrap:wrap}
+.bns{font-size:.72rem;color:var(--sub)}
+.bns span{font-family:var(--mono);color:var(--text);font-weight:600}
+
+/* ─── PROFILE CARDS ───────────────────────────── */
+.prof-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:.55rem;margin:.7rem 0}
+.prof-c{
+  background:var(--s2);border:1px solid var(--bd);border-radius:9px;
+  padding:.8rem .9rem;transition:all .15s;position:relative;overflow:hidden;
+}
+.prof-c::after{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(59,130,246,.18),transparent);
+}
+.prof-c:hover{border-color:var(--bd2);box-shadow:0 4px 18px rgba(0,0,0,.28)}
+.prof-m{font-family:var(--mono);font-size:.9rem;font-weight:700;color:var(--blue);margin-bottom:.38rem;letter-spacing:-.01em}
+.pr{display:flex;justify-content:space-between;font-size:.7rem;margin-bottom:.1rem;align-items:baseline}
+.pk{color:var(--muted)}.pv{font-family:var(--mono);color:var(--sub)}
+.pw{font-size:.61rem;color:var(--yellow);margin-top:.32rem}
+
+/* ─── FIT CARDS ───────────────────────────────── */
+.fp{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin:.7rem 0}
+.fc{background:var(--s2);border:1px solid var(--bd);border-radius:9px;padding:.75rem .9rem;transition:border-color .15s}
+.fc:hover{border-color:var(--bd2)}
+.ff{font-family:var(--mono);font-size:.77rem;color:var(--text);margin-bottom:.44rem}
+.fr{display:flex;justify-content:space-between;font-size:.7rem;margin-bottom:.1rem;align-items:baseline}
+.fk{color:var(--muted)}.fv{font-family:var(--mono);color:var(--sub)}
+
+/* ─── CHARTS ──────────────────────────────────── */
+.c2{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin:.75rem 0}
+@media(max-width:700px){.c2{grid-template-columns:1fr}}
+.cbox{background:var(--s1);border:1px solid var(--bd);border-radius:9px;padding:.85rem;transition:border-color .15s}
+.cbox:hover,.cfull:hover{border-color:var(--bd2)}
+.cbox h4,.cfull h4{
+  font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+  color:var(--muted);margin-bottom:.6rem;display:flex;align-items:center;gap:.4rem;
+}
+.cbox canvas,.cfull canvas{max-height:195px}
+.cfull{background:var(--s1);border:1px solid var(--bd);border-radius:9px;padding:.85rem;margin:.75rem 0;transition:border-color .15s}
+
+/* ─── PENALTY BARS ────────────────────────────── */
+.prow{display:flex;align-items:center;gap:.6rem;margin-bottom:.3rem}
+.plbl{font-family:var(--mono);font-size:.62rem;color:var(--sub);width:78px;flex-shrink:0}
+.ptr{flex:1;height:4px;background:var(--s3);border-radius:3px;overflow:hidden}
+.pfill{height:100%;border-radius:3px;transition:width .58s cubic-bezier(.34,1.4,.64,1)}
+.pnum{font-family:var(--mono);font-size:.62rem;color:var(--sub);width:40px;text-align:right;flex-shrink:0}
+
+/* ─── CALLOUT ─────────────────────────────────── */
+.co{
+  display:flex;gap:.6rem;background:var(--s2);border:1px solid var(--bd);
+  border-radius:var(--r2);padding:.65rem .9rem;margin:.65rem 0;
+  font-size:.77rem;color:var(--sub);line-height:1.6;
+}
+.co.w{border-color:rgba(245,158,11,.25);background:rgba(245,158,11,.04)}
+.co.s{border-color:rgba(16,185,129,.25);background:rgba(16,185,129,.04)}
+.co.e{border-color:rgba(239,68,68,.25);background:rgba(239,68,68,.04)}
+
+/* ─── ENDPOINT LIST ───────────────────────────── */
+.ep{
+  display:flex;align-items:center;gap:.65rem;background:var(--s2);border:1px solid var(--bd);
+  border-radius:6px;padding:.5rem .9rem;margin-bottom:.38rem;transition:all .13s;
+}
+.ep:hover{border-color:var(--bd2);background:var(--s3)}
+.ev{font-family:var(--mono);font-size:.58rem;font-weight:700;padding:2px 8px;border-radius:3px;min-width:40px;text-align:center}
+.ev.post{background:rgba(59,130,246,.12);color:var(--blue);border:1px solid rgba(59,130,246,.2)}
+.ev.get{background:rgba(16,185,129,.12);color:var(--green);border:1px solid rgba(16,185,129,.2)}
+.ep-path{font-family:var(--mono);font-size:.76rem;color:var(--text)}
+.ep-vi{font-size:.67rem;color:var(--muted);margin-left:auto;font-style:italic}
+
+/* ─── COMPARE ─────────────────────────────────── */
+.cmpg{display:grid;grid-template-columns:1fr;gap:1.5rem;margin-top:.8rem}
+.cmp-lbl{
+  display:inline-flex;align-items:center;gap:.4rem;
+  font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;
+  margin-bottom:.55rem;padding:.28rem .65rem;border-radius:4px;
+}
+.cmp-lbl.batch{color:var(--blue);background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.15)}
+.cmp-lbl.pool{color:var(--green);background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.15)}
+
+/* ─── EMPTY ───────────────────────────────────── */
+.empty{text-align:center;padding:2.5rem;color:var(--muted);font-size:.8rem}
+.eico{font-size:2rem;margin-bottom:.5rem;opacity:.2}
+
+code{
+  background:var(--s3);border:1px solid var(--bd);border-radius:3px;
+  padding:1px 5px;font-family:var(--mono);font-size:.78em;color:var(--indigo);
+}
+
+@media(max-width:640px){aside{display:none}.content{padding:1.25rem}}
+</style>
+</head>
+<body>
+<div id="prog"></div>
+<div class="shell">
+
+<!-- ── SIDEBAR ──────────────────────────────────── -->
+<aside id="sidebar">
+  <div class="logo">
+    <div class="logo-badge">API v2.0</div>
+    <h3>OCR Batch<br><em>Optimizer</em></h3>
+    <div class="logo-sub">// tối ưu hoá xử lý song song</div>
+  </div>
+
+  <div class="ng">
+    <div class="ng-lbl">Quy trình</div>
+    <button class="nb" data-sec="s1">
+      <span class="nb-num">01</span>
+      <span class="nb-inner">
+        <span class="nb-main">Config &amp; Data</span>
+        <span class="nb-vi">Cài đặt &amp; nhập dữ liệu</span>
+      </span>
+    </button>
+    <button class="nb" data-sec="s2">
+      <span class="nb-num">02</span>
+      <span class="nb-inner">
+        <span class="nb-main">Benchmark</span>
+        <span class="nb-vi">Phân tích hiệu năng đo thực</span>
+      </span>
+    </button>
+    <button class="nb" data-sec="s3">
+      <span class="nb-num">03</span>
+      <span class="nb-inner">
+        <span class="nb-main">Optimize</span>
+        <span class="nb-vi">Tìm số workers tối ưu</span>
+      </span>
+    </button>
+    <button class="nb" data-sec="s4">
+      <span class="nb-num">04</span>
+      <span class="nb-inner">
+        <span class="nb-main">Bulk Optimize</span>
+        <span class="nb-vi">Tối ưu nhiều kịch bản N</span>
+      </span>
+    </button>
+    <button class="nb" data-sec="s5">
+      <span class="nb-num">05</span>
+      <span class="nb-inner">
+        <span class="nb-main">Batch vs Pool</span>
+        <span class="nb-vi">So sánh hai chiến lược</span>
+      </span>
+    </button>
+
+    <div class="ng-lbl">Tài liệu</div>
+    <button class="nb" data-sec="s6">
+      <span class="nb-num">06</span>
+      <span class="nb-inner">
+        <span class="nb-main">API Endpoints</span>
+        <span class="nb-vi">Danh sách các API</span>
+      </span>
+    </button>
+  </div>
+
+  <div class="aside-foot">
+    FastAPI backend required<br>
+    Default: localhost:8000
+  </div>
+</aside>
+
+<!-- ── CONTENT ───────────────────────────────────── -->
+<div class="content">
+
+<!-- STATUS BAR -->
+<div class="statusbar">
+  <div class="sdot" id="sdot"></div>
+  <span class="stxt" id="stxt">Chưa kết nối</span>
+  <input class="urlinp" id="apiUrl" value="http://127.0.0.1:8000">
+  <button class="bsm" onclick="ping()">Ping</button>
+  <a id="swgA" href="http://127.0.0.1:8000/docs" target="_blank">
+    <button class="bsm">Swagger ↗</button>
+  </a>
+</div>
+
+<!-- §1 CONFIG & DATA -->
+<section class="sec" id="s1">
+  <div class="sech">
+    <div class="sech-left">
+      <span class="secn">§ 01</span>
+      <h2>Config &amp; Benchmark Data</h2>
+      <span class="sech-vi">Cài đặt tham số hệ thống và nhập dữ liệu đo hiệu năng</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="cardh">
+      <div class="cardt">⚙️ Tham số hệ thống <span class="cardt-vi">/ System Parameters</span></div>
+      <button class="btn btn-g bsm" onclick="resetCfg()">↺ Reset</button>
+    </div>
+    <div class="cardb">
+      <div class="frow">
+        <div class="fg">
+          <div class="flabel">
+            <span class="flabel-en">warmup_runs</span>
+            <span class="flabel-vi">— Số run khởi động</span>
+            <i class="tip-ico" data-en="warmup_runs" data-vi="Số lần chạy đầu tiên bị bỏ qua trước khi tính toán. GPU/CPU cần &quot;làm nóng&quot; (load model, JIT compile) nên kết quả run đầu thường chậm hơn và không đại diện.">?</i>
+          </div>
+          <input class="fi" id="cfgW" type="number" value="1" min="0">
+        </div>
+        <div class="fg">
+          <div class="flabel">
+            <span class="flabel-en">m_max_extrap</span>
+            <span class="flabel-vi">— Hệ số nội suy tối đa</span>
+            <i class="tip-ico" data-en="m_max_extrap" data-vi="Cho phép nội suy đến tối đa bao nhiêu lần so với m lớn nhất đã đo. VD: đo đến m=4, đặt 2 → có thể nội suy đến m=8. Nội suy càng xa thì độ tin cậy càng giảm.">?</i>
+          </div>
+          <input class="fi" id="cfgE" type="number" value="2" min="1">
+        </div>
+        <div class="fg">
+          <div class="flabel">
+            <span class="flabel-en">m_max_concurrent</span>
+            <span class="flabel-vi">— Giới hạn GPU (VRAM)</span>
+            <i class="tip-ico" data-en="m_max_concurrent (GPU VRAM limit)" data-vi="Số workers tối đa GPU có thể chạy đồng thời mà không bị tràn VRAM. Đây là hard cap — hệ thống không bao giờ thử m lớn hơn giá trị này.">?</i>
+          </div>
+          <input class="fi" id="cfgC" type="number" value="12" min="1">
+        </div>
+        <div class="fg">
+          <div class="flabel">
+            <span class="flabel-en">n_sim</span>
+            <span class="flabel-vi">— Số mô phỏng Monte Carlo</span>
+            <i class="tip-ico" data-en="n_sim (Monte Carlo simulations)" data-vi="Mode pool chạy mô phỏng ngẫu nhiên n_sim lần để ước tính latency. Số lớn hơn = ổn định hơn nhưng tốn thời gian. Khuyến nghị: 500–2000.">?</i>
+          </div>
+          <input class="fi" id="cfgS" type="number" value="1000" min="50" max="10000">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="cardh">
+      <div class="cardt">📊 Dữ liệu benchmark <span class="cardt-vi">/ Benchmark Data Input</span></div>
+      <div style="display:flex;gap:.5rem;align-items:center">
+        <div class="data-tabs">
+          <div class="dtab on" onclick="switchDataTab('visual')">✏️ Trực quan</div>
+          <div class="dtab" onclick="switchDataTab('json')">{ } JSON</div>
+        </div>
+        <button class="bsm" onclick="loadSample()">⚡ Load mẫu</button>
+      </div>
+    </div>
+    <div class="cardb">
+      <div class="co" style="margin-bottom:.9rem">
+        <span>💡</span>
+        <span><strong>Hướng dẫn:</strong> Mỗi <em>Batch size (m)</em> là số ảnh/request xử lý cùng lúc. Mỗi <em>Run</em> là một lần đo thực tế — nhập thời gian xử lý (giây) của từng request trong run đó.</span>
+      </div>
+      <div id="visualInput">
+        <div id="bsizeContainer"></div>
+        <button class="add-bsize-btn" onclick="addBatchSize()">＋ Thêm Batch Size (m)</button>
+        <div style="margin-top:1rem">
+          <div class="preview-header">
+            <span class="preview-lbl">Preview JSON → API</span>
+          </div>
+          <div class="json-preview" id="jsonPreview">{}</div>
+        </div>
+      </div>
+      <div id="jsonInput" style="display:none">
+        <p style="font-size:.75rem;color:var(--muted);margin-bottom:.65rem">
+          Format: <code>{"m": [[run1_t1, run1_t2, ...], [run2_t1, ...]]}</code>
+          — key là batch-size m, mỗi run là list thời gian (giây).
+        </p>
+        <div class="fg">
+          <textarea class="fi" id="rawJson" rows="9" spellcheck="false" oninput="syncJsonToVisual()"></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- §2 BENCHMARK -->
+<section class="sec" id="s2">
+  <div class="sech">
+    <div class="sech-left">
+      <span class="secn">§ 02</span>
+      <h2>Benchmark Analysis <code style="font-size:.68rem">POST /benchmark</code></h2>
+      <span class="sech-vi">Phân tích dữ liệu đo thực, khớp mô hình Power Law, xem thống kê từng batch size</span>
+    </div>
+  </div>
+  <button class="btn btn-p" id="btnB" onclick="runBench()">
+    <span id="spB"></span>Chạy phân tích Benchmark
+  </button>
+  <div id="outB" style="margin-top:1rem">
+    <div class="empty"><div class="eico">📊</div>Bấm nút trên để phân tích dữ liệu đã nhập</div>
+  </div>
+</section>
+
+<!-- §3 OPTIMIZE -->
+<section class="sec" id="s3">
+  <div class="sech">
+    <div class="sech-left">
+      <span class="secn">§ 03</span>
+      <h2>Find Optimal m* <code style="font-size:.68rem">POST /optimize</code></h2>
+      <span class="sech-vi">Tìm số workers tối ưu để xử lý N requests đang chờ trong hàng đợi</span>
+    </div>
+  </div>
+  <div class="card">
+    <div class="cardb">
+      <div class="frow">
+        <div class="fg">
+          <div class="flabel">
+            <span class="flabel-en">N</span>
+            <span class="flabel-vi">— Số request đồng thời</span>
+            <i class="tip-ico" data-en="N (pending requests)" data-vi="Tổng số tài liệu xử lý đồng thời. Hệ thống thử mọi giá trị m từ 1 đến min(N, hard_cap) và chọn cái tốt nhất.">?</i>
+          </div>
+          <input class="fi" id="optN" type="number" value="8" min="1">
+        </div>
+        <div class="fg">
+          <div class="flabel">
+            <span class="flabel-en">mode</span>
+            <span class="flabel-vi">— Chiến lược xử lý</span>
+            <i class="tip-ico" data-en="mode: pool vs batch" data-vi="<strong>pool</strong> — Worker Pool: m workers song song, worker xong trước nhận job tiếp (thực tế hơn, dùng Monte Carlo). <br><strong>batch</strong> — Batch cứng: gom thành lô m rồi xử lý tuần tự (đơn giản hơn).">?</i>
+          </div>
+          <select class="fi" id="optM">
+            <option value="pool">pool — Worker Pool (thực tế)</option>
+            <option value="batch">batch — Batch tuần tự (đơn giản)</option>
+          </select>
+        </div>
+        <div class="fg">
+          <div class="flabel">
+            <span class="flabel-en">latency metric</span>
+            <span class="flabel-vi">— Cách tính latency worst-case</span>
+            <i class="tip-ico" data-en="use_p95: T_max avg vs p95" data-vi="<strong>T_max avg</strong> — Trung bình max qua các lần đo (ổn định, phù hợp tài liệu đồng nhất). <br><strong>p95</strong> — Phân vị 95% (thận trọng hơn, phù hợp khi tài liệu có độ dài biến thiên lớn).">?</i>
+          </div>
+          <select class="fi" id="optP">
+            <option value="false">T_max avg — Tài liệu đồng nhất</option>
+            <option value="true">p95 — Tài liệu mix độ dài</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-p" id="btnO" onclick="runOpt()">
+        <span id="spO"></span>Tìm m* tối ưu
+      </button>
+    </div>
+  </div>
+  <div id="outO" style="margin-top:.75rem">
+    <div class="empty"><div class="eico">🎯</div>Chọn N và mode rồi bấm Tìm m*</div>
+  </div>
+</section>
+
+<!-- §4 BULK -->
+<section class="sec" id="s4">
+  <div class="sech">
+    <div class="sech-left">
+      <span class="secn">§ 04</span>
+      <h2>Bulk Optimize <code style="font-size:.68rem">POST /optimize/bulk</code></h2>
+      <span class="sech-vi">Tối ưu nhiều kịch bản N cùng lúc — dùng để vẽ đồ thị m* theo N</span>
+    </div>
+  </div>
+  <div class="card">
+    <div class="cardb">
+      <div class="frow">
+        <div class="fg" style="grid-column:1/-1">
+          <div class="flabel">
+            <span class="flabel-en">N_list</span>
+            <span class="flabel-vi">— Danh sách số request (cách nhau dấu phẩy)</span>
+            <i class="tip-ico" data-en="N_list (list of pending counts)" data-vi="Nhập nhiều giá trị N cách nhau dấu phẩy. Hệ thống tìm m* cho từng N và vẽ đồ thị m* thay đổi theo N — giúp chọn chiến lược tổng quát.">?</i>
+          </div>
+          <input class="fi" id="bulkNs" value="2,4,6,8,10,12,16,20,24,32">
+        </div>
+        <div class="fg">
+          <div class="flabel"><span class="flabel-en">mode</span><span class="flabel-vi">— Chiến lược</span></div>
+          <select class="fi" id="bulkM"><option value="pool">pool</option><option value="batch">batch</option></select>
+        </div>
+        <div class="fg">
+          <div class="flabel"><span class="flabel-en">latency metric</span><span class="flabel-vi">— Cách tính</span></div>
+          <select class="fi" id="bulkP"><option value="false">T_max avg</option><option value="true">p95</option></select>
+        </div>
+      </div>
+      <button class="btn btn-p" id="btnBk" onclick="runBulk()">
+        <span id="spBk"></span>Chạy Bulk Optimize
+      </button>
+    </div>
+  </div>
+  <div id="outBk" style="margin-top:.75rem">
+    <div class="empty"><div class="eico">📦</div>Nhập danh sách N rồi bấm Chạy</div>
+  </div>
+</section>
+
+<!-- §5 COMPARE -->
+<section class="sec" id="s5">
+  <div class="sech">
+    <div class="sech-left">
+      <span class="secn">§ 05</span>
+      <h2>Batch vs Pool <code style="font-size:.68rem">POST /compare</code></h2>
+      <span class="sech-vi">So sánh trực tiếp hai chiến lược xử lý cho cùng một N — xem chiến lược nào tốt hơn trong trường hợp của bạn</span>
+    </div>
+  </div>
+  <div class="card">
+    <div class="cardb">
+      <div class="frow">
+        <div class="fg">
+          <div class="flabel"><span class="flabel-en">N</span><span class="flabel-vi">— Số request cần so sánh</span></div>
+          <input class="fi" id="cmpN" type="number" value="8" min="1">
+        </div>
+        <div class="fg">
+          <div class="flabel"><span class="flabel-en">latency metric</span><span class="flabel-vi">— Cách tính latency</span></div>
+          <select class="fi" id="cmpP"><option value="false">T_max avg</option><option value="true">p95</option></select>
+        </div>
+      </div>
+      <button class="btn btn-p" id="btnCmp" onclick="runCmp()">
+        <span id="spCmp"></span>So sánh Batch vs Pool
+      </button>
+    </div>
+  </div>
+  <div id="outCmp" style="margin-top:.75rem">
+    <div class="empty"><div class="eico">⚖️</div>Bấm So sánh để thấy sự khác biệt giữa hai chiến lược</div>
+  </div>
+</section>
+
+<!-- §6 DOCS -->
+<section class="sec" id="s6">
+  <div class="sech">
+    <div class="sech-left">
+      <span class="secn">§ 06</span>
+      <h2>API Endpoints</h2>
+      <span class="sech-vi">Danh sách tất cả các API có thể gọi trực tiếp</span>
+    </div>
+  </div>
+  <div class="card"><div class="cardb">
+    <div class="ep"><span class="ev get">GET</span><span class="ep-path">/health</span><span class="ep-vi">Kiểm tra server đang chạy</span></div>
+    <div class="ep"><span class="ev post">POST</span><span class="ep-path">/benchmark</span><span class="ep-vi">Phân tích data → thống kê + Power Law fit + curve</span></div>
+    <div class="ep"><span class="ev post">POST</span><span class="ep-path">/optimize</span><span class="ep-vi">Tìm m* tối ưu cho 1 giá trị N</span></div>
+    <div class="ep"><span class="ev post">POST</span><span class="ep-path">/optimize/bulk</span><span class="ep-vi">Tìm m* cho nhiều N → vẽ đồ thị m*=f(N)</span></div>
+    <div class="ep"><span class="ev post">POST</span><span class="ep-path">/compare</span><span class="ep-vi">So sánh side-by-side batch vs pool</span></div>
+    <div class="co s" style="margin-top:.75rem">
+      <span>🔗</span>
+      <span>Swagger UI: <a id="swgTxt" style="color:var(--blue)" target="_blank">http://127.0.0.1:8000/docs</a>
+      &nbsp;·&nbsp; ReDoc: <a id="rdocTxt" style="color:var(--blue)" target="_blank">http://127.0.0.1:8000/redoc</a></span>
+    </div>
+  </div></div>
+</section>
+
+</div><!-- .content -->
+</div><!-- .shell -->
+
+<script>
+// ══════════════════════════════════════════════════
+// CONSTANTS & STATE
+// ══════════════════════════════════════════════════
+const SAMPLE={
+  "1":[[107],[108],[108],[108]],
+  "2":[[163,185],[142,152],[150,177],[147,159]],
+  "4":[[248,280,313,340],[241,282,310,320],[229,277,301,339],[232,274,303,323]]
+};
+const GC='#111d30', TC='#334d6e';
+const $=id=>document.getElementById(id);
+const base=()=>$('apiUrl').value.replace(/\/+$/,'');
+let dataStore=[], currentDataTab='visual';
+
+// ══════════════════════════════════════════════════
+// SCROLL PROGRESS BAR
+// ══════════════════════════════════════════════════
+window.addEventListener('scroll',()=>{
+  const d=document.documentElement;
+  $('prog').style.width=(d.scrollTop/(d.scrollHeight-d.clientHeight)*100)+'%';
+},{passive:true});
+
+// ══════════════════════════════════════════════════
+// SCROLL-AWARE SIDEBAR  (IntersectionObserver)
+// ══════════════════════════════════════════════════
+// rootMargin: only fire when section crosses top 35% of viewport
+const secObserver = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(!e.isIntersecting) return;
+    const id = e.target.id;
+    document.querySelectorAll('.nb[data-sec]').forEach(b=>{
+      const active = b.dataset.sec === id;
+      b.classList.toggle('on', active);
+    });
+  });
+},{rootMargin:'-5% 0px -60% 0px', threshold:0});
+
+// Section entrance animation
+const animObserver = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){ e.target.classList.add('vis'); animObserver.unobserve(e.target); }
+  });
+},{threshold:0.04});
+
+document.querySelectorAll('.sec').forEach(s=>{
+  secObserver.observe(s);
+  animObserver.observe(s);
+});
+
+// Sidebar click → smooth scroll (observer handles highlight)
+document.querySelectorAll('.nb[data-sec]').forEach(b=>{
+  b.addEventListener('click',()=>{
+    // Optimistic highlight on click for immediate feedback
+    document.querySelectorAll('.nb').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    document.getElementById(b.dataset.sec)?.scrollIntoView({behavior:'smooth',block:'start'});
+  });
+});
+
+// ══════════════════════════════════════════════════
+// API URL LINKS
+// ══════════════════════════════════════════════════
+function updateLinks(){
+  const b=base();
+  $('swgA').href=b+'/docs';
+  $('swgTxt').href=b+'/docs'; $('swgTxt').textContent=b+'/docs';
+  $('rdocTxt').href=b+'/redoc'; $('rdocTxt').textContent=b+'/redoc';
+}
+$('apiUrl').addEventListener('input',updateLinks);
+updateLinks();
+
+// ══════════════════════════════════════════════════
+// DATA BUILDER
+// ══════════════════════════════════════════════════
+function loadSample(){
+  dataStore=Object.entries(SAMPLE).map(([m,runs])=>({m:parseInt(m),runs:runs.map(r=>[...r])}));
+  renderVisual(); storeToJson();
+}
+
+function switchDataTab(tab){
+  currentDataTab=tab;
+  document.querySelectorAll('.dtab').forEach((t,i)=>{
+    t.classList.toggle('on',(i===0&&tab==='visual')||(i===1&&tab==='json'));
+  });
+  $('visualInput').style.display=tab==='visual'?'':'none';
+  $('jsonInput').style.display=tab==='json'?'':'none';
+  if(tab==='json') storeToJson();
+  if(tab==='visual') syncJsonToVisual();
+}
+
+function renderVisual(){
+  const c=$('bsizeContainer'); c.innerHTML='';
+  dataStore.sort((a,b)=>a.m-b.m).forEach((bs,bi)=>c.appendChild(makeBsizeBlock(bs,bi)));
+  updateJsonPreview();
+}
+
+function makeBsizeBlock(bs,bi){
+  const div=document.createElement('div');
+  div.className='bsize-block'; div.id=`bs_${bi}`;
+  const header=document.createElement('div');
+  header.className='bsize-header';
+  header.innerHTML=`
+    <div style="display:flex;align-items:center;gap:.5rem">
+      <span class="bsize-label">Batch size</span>
+      <span class="bsize-m">m =</span>
+      <input type="number" min="1" value="${bs.m}"
+        style="width:52px;background:var(--s3);border:1px solid var(--bd);border-radius:5px;
+               padding:.2rem .4rem;color:var(--blue);font-family:var(--mono);font-size:.88rem;
+               font-weight:700;outline:none;text-align:center;transition:border-color .12s"
+        oninput="updateM(${bi},this.value)"
+        onfocus="this.style.borderColor='var(--blue)'"
+        onblur="this.style.borderColor='var(--bd)'">
+    </div>
+    <button class="bsize-del" onclick="deleteBsize(${bi})">✕ Xoá</button>`;
+  div.appendChild(header);
+  const runsDiv=document.createElement('div');
+  runsDiv.className='runs-grid'; runsDiv.id=`runs_${bi}`;
+  bs.runs.forEach((run,ri)=>runsDiv.appendChild(makeRunRow(bi,ri,run)));
+  div.appendChild(runsDiv);
+  const addRunBtn=document.createElement('button');
+  addRunBtn.className='add-run-btn';
+  addRunBtn.innerHTML='＋ Thêm Run';
+  addRunBtn.onclick=()=>addRun(bi);
+  div.appendChild(addRunBtn);
+  return div;
+}
+
+function makeRunRow(bi,ri,vals){
+  const row=document.createElement('div');
+  row.className='run-row'; row.id=`run_${bi}_${ri}`;
+  const num=document.createElement('div');
+  num.className='run-num'; num.textContent=`Run ${ri+1}`;
+  row.appendChild(num);
+  const valsDiv=document.createElement('div');
+  valsDiv.className='run-vals'; valsDiv.id=`vals_${bi}_${ri}`;
+  vals.forEach((v,vi)=>valsDiv.appendChild(makeValInput(bi,ri,vi,v)));
+  const addValBtn=document.createElement('button');
+  addValBtn.className='run-add-val'; addValBtn.textContent='＋ Val';
+  addValBtn.onclick=()=>addVal_fn(bi,ri);
+  valsDiv.appendChild(addValBtn);
+  row.appendChild(valsDiv);
+  const delBtn=document.createElement('button');
+  delBtn.className='run-del'; delBtn.innerHTML='✕'; delBtn.title='Xoá run này';
+  delBtn.onclick=()=>deleteRun(bi,ri);
+  row.appendChild(delBtn);
+  return row;
+}
+
+function makeValInput(bi,ri,vi,val){
+  const wrap=document.createElement('span'); wrap.className='val-wrapper';
+  const inp=document.createElement('input');
+  inp.type='number'; inp.step='0.1'; inp.min='0';
+  inp.className='val-inp'; inp.value=val;
+  inp.title=`Run ${ri+1}, giá trị ${vi+1} (giây)`;
+  inp.oninput=()=>{dataStore[bi].runs[ri][vi]=parseFloat(inp.value)||0; updateJsonPreview();};
+  const del=document.createElement('button');
+  del.className='val-del'; del.title=`Xoá giá trị ${vi+1}`; del.textContent='×';
+  del.onclick=()=>deleteVal(bi,ri,vi);
+  wrap.appendChild(inp); wrap.appendChild(del);
+  return wrap;
+}
+
+function deleteVal(bi,ri,vi){
+  if(dataStore[bi].runs[ri].length<=1) return;
+  dataStore[bi].runs[ri].splice(vi,1); renderVisual();
+}
+function addBatchSize(){
+  const ex=dataStore.map(d=>d.m); let nm=1; while(ex.includes(nm)) nm++;
+  dataStore.push({m:nm,runs:[[100]]}); renderVisual();
+}
+function deleteBsize(bi){ dataStore.splice(bi,1); renderVisual(); }
+function updateM(bi,val){ dataStore[bi].m=parseInt(val)||1; updateJsonPreview(); }
+function addRun(bi){ dataStore[bi].runs.push(new Array(dataStore[bi].m).fill(100)); renderVisual(); }
+function deleteRun(bi,ri){ dataStore[bi].runs.splice(ri,1); renderVisual(); }
+function addVal_fn(bi,ri){ dataStore[bi].runs[ri].push(100); renderVisual(); }
+
+function updateJsonPreview(){
+  try{ $('jsonPreview').textContent=JSON.stringify(buildRaw(),null,2); }
+  catch(e){ $('jsonPreview').textContent='(lỗi)'; }
+}
+function storeToJson(){
+  try{ $('rawJson').value=JSON.stringify(buildRaw(),null,2); }catch(_){}
+}
+function syncJsonToVisual(){
+  if(currentDataTab!=='visual') return;
+  try{
+    const obj=JSON.parse($('rawJson').value);
+    dataStore=Object.entries(obj).map(([m,runs])=>({m:parseInt(m),runs:runs.map(r=>[...r])}));
+    renderVisual();
+  }catch(_){}
+}
+function buildRaw(){
+  const obj={}; dataStore.forEach(bs=>{obj[bs.m]=bs.runs;}); return obj;
+}
+function getRaw(){
+  if(currentDataTab==='visual') return buildRaw();
+  const v=$('rawJson').value.trim();
+  if(!v) throw new Error('Chưa nhập dữ liệu benchmark');
+  return JSON.parse(v);
+}
+
+// ══════════════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════════════
+function cfg(){
+  return{
+    warmup_runs:+$('cfgW').value,m_max_extrap:+$('cfgE').value,
+    m_max_concurrent:+$('cfgC').value,n_sim:+$('cfgS').value
+  };
+}
+function resetCfg(){$('cfgW').value=1;$('cfgE').value=2;$('cfgC').value=12;$('cfgS').value=1000;}
+
+// ══════════════════════════════════════════════════
+// API HELPERS
+// ══════════════════════════════════════════════════
+async function api(path,body=null){
+  const opts=body
+    ?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}
+    :{method:'GET'};
+  const res=await fetch(base()+path,opts);
+  if(!res.ok){const e=await res.json().catch(()=>({detail:res.statusText}));throw new Error(e.detail||`HTTP ${res.status}`);}
+  return res.json();
+}
+async function ping(){
+  $('sdot').className='sdot ping'; $('stxt').textContent='Đang kiểm tra…';
+  try{
+    const d=await api('/health');
+    $('sdot').className='sdot ok';
+    $('stxt').textContent=`Đã kết nối · v${d.version||'?'}`;
+  }catch(e){
+    $('sdot').className='sdot err';
+    $('stxt').textContent='Lỗi: '+e.message;
+  }
+}
+function busy(btnId,spId,on){$(btnId).disabled=on; $(spId).innerHTML=on?'<span class="spin"></span>':'';}
+function err(el,msg){el.innerHTML=`<div class="co e"><span>❌</span><span>${msg}</span></div>`;}
+function loading(el,msg){
+  el.innerHTML=`<div class="co" style="animation:_lp 1.2s ease-in-out infinite">
+    <span>⏳</span><span>${msg}</span></div>`;
+}
+// inject loading keyframe once
+const _lpStyle=document.createElement('style');
+_lpStyle.textContent='@keyframes _lp{0%,100%{opacity:.55}50%{opacity:1}}';
+document.head.appendChild(_lpStyle);
+
+// ══════════════════════════════════════════════════
+// CHARTS
+// ══════════════════════════════════════════════════
+const CH={};
+function mkChart(id,cfg){
+  if(CH[id]) try{CH[id].destroy();}catch(_){}
+  const el=document.getElementById(id); if(!el) return null;
+  CH[id]=new Chart(el.getContext('2d'),cfg); return CH[id];
+}
+const baseOpts={
+  responsive:true,animation:{duration:550,easing:'easeOutQuart'},
+  plugins:{legend:{labels:{color:'#7a98b8',font:{size:9,family:'JetBrains Mono'},boxWidth:10}}},
+  scales:{
+    x:{grid:{color:GC,lineWidth:.5},ticks:{color:TC,font:{size:9}}},
+    y:{grid:{color:GC,lineWidth:.5},ticks:{color:TC,font:{size:9}}}
+  }
+};
+
+// ══════════════════════════════════════════════════
+// §2 BENCHMARK
+// ══════════════════════════════════════════════════
+async function runBench(){
+  let r; try{r=getRaw();}catch(e){err($('outB'),e.message);return;}
+  busy('btnB','spB',true);
+  loading($('outB'),'Đang phân tích dữ liệu…');
+  try{const d=await api('/benchmark',{...cfg(),raw:r}); renderBench(d);}
+  catch(e){err($('outB'),e.message);}
+  finally{busy('btnB','spB',false);}
+}
+
+function renderBench(d){
+  const el=$('outB');
+  const g=v=>v>=0.95?'g':'y';
+  const metricsHtml=`<div class="mg">
+    <div class="mc"><div class="mv c">${d.m_max_measured}</div><div class="ml">m đo thực</div></div>
+    <div class="mc"><div class="mv">${d.m_hard_cap}</div><div class="ml">Hard Cap</div></div>
+    <div class="mc"><div class="mv ${g(d.model_max.r2)}">${d.model_max.r2.toFixed(4)}</div><div class="ml">R² T_max</div></div>
+    <div class="mc"><div class="mv">${d.model_max.alpha.toFixed(4)}</div><div class="ml">α T_max</div></div>
+    <div class="mc"><div class="mv">${d.model_avg.t0.toFixed(1)}</div><div class="ml">T₀ avg (s)</div></div>
+    <div class="mc"><div class="mv">${d.model_max.t0.toFixed(1)}</div><div class="ml">T₀ max (s)</div></div>
+  </div>`;
+  let profHtml='<div class="prof-grid">';
+  Object.entries(d.profile).forEach(([m,v])=>{
+    profHtml+=`<div class="prof-c">
+      <div class="prof-m">m = ${m} workers</div>
+      <div class="pr"><span class="pk">T_avg</span><span class="pv">${v.T_avg.toFixed(2)}s</span></div>
+      <div class="pr"><span class="pk">T_max</span><span class="pv">${v.T_max.toFixed(2)}s</span></div>
+      <div class="pr"><span class="pk">T_max p95</span><span class="pv">${v.T_max_p95.toFixed(2)}s</span></div>
+      <div class="pr"><span class="pk">std</span><span class="pv">±${v.std.toFixed(2)}s</span></div>
+      <div class="pr"><span class="pk">CV</span><span class="pv">${(v.cv*100).toFixed(2)}%</span></div>
+      <div class="pr"><span class="pk">n runs</span><span class="pv">${v.n}</span></div>
+      ${v.warning?'<div class="pw">⚠ CV ≥ 5% — nên đo thêm runs</div>':''}
+    </div>`;
+  });
+  profHtml+='</div>';
+  const mk=(m,model)=>`<div class="fc">
+    <div class="ff">${m}(m) = ${model.t0.toFixed(2)} × m<sup>${model.alpha.toFixed(4)}</sup></div>
+    <div class="fr"><span class="fk">R²</span>
+      <span class="fv" style="color:${model.r2>=0.95?'var(--green)':'var(--yellow)'}">
+        ${model.r2.toFixed(4)} ${model.warning?'⚠':'✓'}
+      </span>
+    </div>
+    <div class="fr"><span class="fk">α (scaling)</span><span class="fv">${model.alpha.toFixed(4)}</span></div>
+    <div class="fr"><span class="fk">α uncertainty</span><span class="fv">±${model.alpha_std.toFixed(4)}</span></div>
+    <div class="fr"><span class="fk">T₀ (base time)</span><span class="fv">${model.t0.toFixed(2)}s</span></div>
+    ${model.warning?'<div style="font-size:.62rem;color:var(--yellow);margin-top:.3rem">⚠ Fit kém — R²&lt;0.92 hoặc α ngoài [0.4,1.3]</div>':''}
+  </div>`;
+  el.innerHTML=metricsHtml+profHtml+
+    `<div class="fp">${mk('T_avg',d.model_avg)}${mk('T_max',d.model_max)}</div>
+    <div class="c2">
+      <div class="cbox"><h4>📈 T_avg — Power Law Fit</h4><canvas id="chAvg"></canvas></div>
+      <div class="cbox"><h4>📈 T_max — Power Law Fit</h4><canvas id="chMax"></canvas></div>
+    </div>`;
+  setTimeout(()=>{
+    const meas=Object.entries(d.profile);
+    mkFitChart('chAvg','T_avg','#f59e0b',meas.map(([m,v])=>({x:+m,y:v.T_avg})),d.fit_curve.map(p=>({x:p.m,y:p.T_avg})));
+    mkFitChart('chMax','T_max','#10b981',meas.map(([m,v])=>({x:+m,y:v.T_max})),d.fit_curve.map(p=>({x:p.m,y:p.T_max})));
+  },80);
+}
+
+function mkFitChart(id,label,color,measured,fit){
+  mkChart(id,{type:'scatter',data:{datasets:[
+    {label:`${label} fit`,data:fit,borderColor:color,backgroundColor:'transparent',pointRadius:0,showLine:true,tension:.4,borderWidth:2,order:2},
+    {label:`${label} đo thực`,data:measured,borderColor:color,backgroundColor:color,pointRadius:7,showLine:false,order:1},
+  ]},options:{...baseOpts,scales:{
+    x:{...baseOpts.scales.x,title:{display:true,text:'m (workers)',color:TC,font:{size:9}}},
+    y:{...baseOpts.scales.y,title:{display:true,text:'giây',color:TC,font:{size:9}}}
+  }}});
+}
+
+// ══════════════════════════════════════════════════
+// §3 OPTIMIZE
+// ══════════════════════════════════════════════════
+async function runOpt(){
+  let r; try{r=getRaw();}catch(e){err($('outO'),e.message);return;}
+  busy('btnO','spO',true);
+  loading($('outO'),'Đang tìm m* tối ưu…');
+  try{
+    const d=await api('/optimize',{...cfg(),raw:r,N:+$('optN').value,mode:$('optM').value,use_p95:$('optP').value==='true'});
+    renderOpt(d,'outO');
+  }catch(e){err($('outO'),e.message);}
+  finally{busy('btnO','spO',false);}
+}
+
+function penBar(label,pct,color,total){
+  const w=total>0?Math.round(pct/total*100):0;
+  return `<div class="prow"><div class="plbl">${label}</div>
+    <div class="ptr"><div class="pfill" style="width:${w}%;background:${color}"></div></div>
+    <div class="pnum">${pct.toFixed(1)}%</div></div>`;
+}
+
+function renderOpt(d,containerId,titlePrefix=''){
+  const best=d.rows.find(r=>r.is_optimal);
+  const modeStr=d.mode==='pool'?'Worker Pool':'Batch tuần tự';
+  const srcOk=best.src==='measured';
+  const banner=`<div class="banner">
+    ${titlePrefix?`<div style="font-size:.6rem;text-transform:uppercase;letter-spacing:.1em;font-weight:700;color:${d.mode==='pool'?'var(--green)':'var(--blue)'};opacity:.75;margin-bottom:.32rem">${titlePrefix}</div>`:''}
+    <div class="bn-top">
+      <div class="bn-m">m* = ${d.optimal_m}</div>
+      <div class="bn-sub">${modeStr} · N=${d.N} · cap=${d.m_hard_cap} · ${d.use_p95?'p95':'T_max avg'}</div>
+    </div>
+    <div class="bn-stats">
+      <div class="bns">avg latency <span>${best.avg_lat.toFixed(1)}s</span></div>
+      <div class="bns">eff latency <span>${best.eff_lat.toFixed(1)}s</span></div>
+      <div class="bns">makespan <span>${best.makespan.toFixed(0)}s</span></div>
+      <div class="bns">throughput <span>${best.throughput.toFixed(4)}/s</span></div>
+      <div class="bns">penalty <span>${best.penalty_pct.toFixed(2)}%</span></div>
+      <div class="bns">nguồn <span style="color:${srcOk?'var(--green)':'var(--yellow)'}">${srcOk?'✓ đo thực':'⚠ nội suy'}</span></div>
+    </div>
+  </div>`;
+  const pb=best.penalty_breakdown;
+  const penHtml=pb.total>0?`<div class="card" style="margin-bottom:.65rem">
+    <div class="cardh"><div class="cardt">🔍 Phân tích penalty — m*=${best.m}</div></div>
+    <div class="cardb">
+      ${penBar('Base',pb.base,'#3b82f6',pb.total)}
+      ${penBar('Distance',pb.distance,'#f59e0b',pb.total)}
+      ${penBar('Uncertainty',pb.uncertainty,'#a855f7',pb.total)}
+      ${penBar('VRAM sat.',pb.vram_sat,'#ef4444',pb.total)}
+      <div style="font-size:.7rem;color:var(--sub);margin-top:.4rem;font-family:var(--mono)">
+        Total = <strong style="color:var(--red)">${pb.total.toFixed(2)}%</strong>
+      </div>
+    </div></div>`:'';
+  const trows=d.rows.map(r=>`<tr class="${r.is_optimal?'opt':''}">
+    <td>${r.m}${r.is_optimal?' <span class="tag to">★ tốt nhất</span>':''}</td>
+    <td>${r.T_avg.toFixed(2)}s</td><td>${r.T_max.toFixed(2)}s</td>
+    <td>${r.T_max_p95!=null?r.T_max_p95.toFixed(2)+'s':'—'}</td>
+    <td>${r.avg_lat.toFixed(2)}s</td>
+    <td style="color:${r.is_optimal?'var(--blue)':'inherit'};font-weight:${r.is_optimal?'700':'400'}">${r.eff_lat.toFixed(2)}s</td>
+    <td>${r.makespan.toFixed(0)}s</td><td>${r.throughput.toFixed(5)}/s</td>
+    <td>${r.penalty_pct.toFixed(2)}%</td>
+    <td><span class="tag ${r.src==='measured'?'tm':'te'}">${r.src==='measured'?'đo thực':'nội suy'}</span></td>
+  </tr>`).join('');
+  const chartId=containerId+'_eff';
+  document.getElementById(containerId).innerHTML=banner+penHtml+
+    `<div class="card">
+      <div class="cardh"><div class="cardt">📋 Tất cả m ứng viên · N=${d.N} · ${modeStr}</div></div>
+      <div class="cardb tw"><table><thead><tr>
+        <th>m</th><th>T_avg</th><th>T_max</th><th>p95</th>
+        <th>avg latency</th><th>eff latency ↓min</th><th>makespan</th><th>throughput</th><th>penalty</th><th>nguồn</th>
+      </tr></thead><tbody>${trows}</tbody></table></div>
+    </div>
+    <div class="cfull"><h4>📊 Effective Latency theo m — avg_lat + penalty</h4><canvas id="${chartId}"></canvas></div>`;
+  setTimeout(()=>{
+    const ms=d.rows.map(r=>`m=${r.m}`);
+    mkChart(chartId,{type:'bar',data:{labels:ms,datasets:[
+      {label:'avg_lat',data:d.rows.map(r=>r.avg_lat),backgroundColor:'rgba(59,130,246,.32)',borderColor:'#3b82f6',borderWidth:1,borderRadius:3,order:2},
+      {label:'eff_lat (có penalty)',data:d.rows.map(r=>r.eff_lat),backgroundColor:'rgba(239,68,68,.28)',borderColor:'#ef4444',borderWidth:1,borderRadius:3,order:1},
+      {label:'m* tối ưu',data:d.rows.map(r=>r.is_optimal?r.eff_lat:null),type:'scatter',pointRadius:10,pointBackgroundColor:'#f59e0b',pointBorderColor:'rgba(245,158,11,.25)',pointBorderWidth:4,showLine:false,order:0},
+    ]},options:{...baseOpts,scales:{x:{...baseOpts.scales.x},y:{...baseOpts.scales.y,title:{display:true,text:'latency (giây)',color:TC,font:{size:9}}}}}});
+  },80);
+}
+
+// ══════════════════════════════════════════════════
+// §4 BULK
+// ══════════════════════════════════════════════════
+async function runBulk(){
+  let r; try{r=getRaw();}catch(e){err($('outBk'),e.message);return;}
+  const Ns=$('bulkNs').value.split(',').map(s=>parseInt(s.trim())).filter(n=>n>0&&!isNaN(n));
+  if(!Ns.length){err($('outBk'),'Danh sách N trống');return;}
+  busy('btnBk','spBk',true);
+  loading($('outBk'),'Đang chạy Bulk Optimize…');
+  try{
+    const d=await api('/optimize/bulk',{...cfg(),raw:r,N_list:Ns,mode:$('bulkM').value,use_p95:$('bulkP').value==='true'});
+    renderBulk(d);
+  }catch(e){err($('outBk'),e.message);}
+  finally{busy('btnBk','spBk',false);}
+}
+
+function renderBulk(d){
+  const ok=d.results.filter(r=>!r.error);
+  const trows=d.results.map(r=>r.error
+    ?`<tr><td>${r.N}</td><td colspan="5" style="color:var(--red)">${r.error}</td></tr>`
+    :`<tr><td>${r.N}</td>
+      <td style="color:var(--blue);font-weight:700;font-family:var(--mono)">${r.optimal_m}</td>
+      <td>${r.avg_lat.toFixed(2)}s</td><td>${r.eff_lat.toFixed(2)}s</td>
+      <td>${r.makespan.toFixed(0)}s</td><td>${r.throughput.toFixed(5)}/s</td></tr>`).join('');
+  $('outBk').innerHTML=`<div class="mg">
+    <div class="mc"><div class="mv c">${ok.length}</div><div class="ml">N đánh giá</div></div>
+    <div class="mc"><div class="mv">${d.mode}</div><div class="ml">Mode</div></div>
+    <div class="mc"><div class="mv">${d.use_p95?'p95':'avg'}</div><div class="ml">Metric</div></div>
+    <div class="mc"><div class="mv g">${ok.length?Math.min(...ok.map(r=>r.optimal_m)):'-'}</div><div class="ml">m* nhỏ nhất</div></div>
+    <div class="mc"><div class="mv y">${ok.length?Math.max(...ok.map(r=>r.optimal_m)):'-'}</div><div class="ml">m* lớn nhất</div></div>
+  </div>
+  <div class="card">
+    <div class="cardh"><div class="cardt">📦 Kết quả Bulk · ${d.mode} · ${d.use_p95?'p95':'avg'}</div></div>
+    <div class="cardb tw"><table><thead><tr>
+      <th>N</th><th>m* tối ưu</th><th>avg_lat</th><th>eff_lat</th><th>makespan</th><th>throughput</th>
+    </tr></thead><tbody>${trows}</tbody></table></div>
+  </div>
+  <div class="cfull"><h4>📈 m* tối ưu = f(N) — ${d.mode}</h4><canvas id="bulkCh"></canvas></div>`;
+  setTimeout(()=>{
+    mkChart('bulkCh',{type:'line',data:{labels:ok.map(r=>`N=${r.N}`),datasets:[
+      {label:'m* tối ưu',data:ok.map(r=>r.optimal_m),
+       borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,.06)',fill:true,tension:.38,
+       pointRadius:5,pointBackgroundColor:'#3b82f6',pointBorderColor:'rgba(59,130,246,.28)',
+       pointBorderWidth:3,borderWidth:2},
+    ]},options:{...baseOpts,scales:{
+      x:{...baseOpts.scales.x},
+      y:{...baseOpts.scales.y,title:{display:true,text:'m*',color:TC,font:{size:9}},ticks:{...baseOpts.scales.y.ticks,stepSize:1}}
+    }}});
+  },80);
+}
+
+// ══════════════════════════════════════════════════
+// §5 COMPARE
+// ══════════════════════════════════════════════════
+async function runCmp(){
+  let r; try{r=getRaw();}catch(e){err($('outCmp'),e.message);return;}
+  busy('btnCmp','spCmp',true);
+  loading($('outCmp'),'Đang so sánh Batch vs Pool…');
+  try{
+    const d=await api('/compare',{...cfg(),raw:r,N:+$('cmpN').value,mode:'pool',use_p95:$('cmpP').value==='true'});
+    renderCmp(d);
+  }catch(e){err($('outCmp'),e.message);}
+  finally{busy('btnCmp','spCmp',false);}
+}
+
+function renderCmp(d){
+  const bBest=d.batch.rows.find(r=>r.is_optimal);
+  const pBest=d.pool.rows.find(r=>r.is_optimal);
+  const imp=bBest.avg_lat>0?((bBest.avg_lat-pBest.avg_lat)/bBest.avg_lat*100).toFixed(1):'0';
+  const allMs=[...new Set([...d.batch.rows.map(r=>r.m),...d.pool.rows.map(r=>r.m)])].sort((a,b)=>a-b);
+  const bMap=Object.fromEntries(d.batch.rows.map(r=>[r.m,r.avg_lat]));
+  const pMap=Object.fromEntries(d.pool.rows.map(r=>[r.m,r.avg_lat]));
+  $('outCmp').innerHTML=`<div class="mg">
+    <div class="mc"><div class="mv">${bBest.m}</div><div class="ml">Batch m*</div></div>
+    <div class="mc"><div class="mv y">${bBest.avg_lat.toFixed(1)}s</div><div class="ml">Batch avg_lat</div></div>
+    <div class="mc"><div class="mv g">${pBest.m}</div><div class="ml">Pool m*</div></div>
+    <div class="mc"><div class="mv g">${pBest.avg_lat.toFixed(1)}s</div><div class="ml">Pool avg_lat</div></div>
+    <div class="mc"><div class="mv" style="color:${+imp>0?'var(--green)':'var(--red)'}">${imp}%</div><div class="ml">Pool cải thiện</div></div>
+    <div class="mc"><div class="mv c">${d.N}</div><div class="ml">N</div></div>
+  </div>
+  <div class="cfull"><h4>⚖️ avg_lat — Batch vs Worker Pool (N=${d.N})</h4><canvas id="cmpCh"></canvas></div>
+  <div class="cmpg" id="cmpDetails"></div>`;
+  setTimeout(()=>{
+    mkChart('cmpCh',{type:'bar',data:{labels:allMs.map(m=>`m=${m}`),datasets:[
+      {label:'Batch',data:allMs.map(m=>bMap[m]??null),backgroundColor:'rgba(59,130,246,.4)',borderColor:'#3b82f6',borderWidth:1,borderRadius:4},
+      {label:'Pool',data:allMs.map(m=>pMap[m]??null),backgroundColor:'rgba(16,185,129,.4)',borderColor:'#10b981',borderWidth:1,borderRadius:4},
+    ]},options:{...baseOpts,scales:{x:{...baseOpts.scales.x},y:{...baseOpts.scales.y,title:{display:true,text:'avg latency (giây)',color:TC,font:{size:9}}}}}});
+
+    const det=$('cmpDetails');
+
+    const bWrap=document.createElement('div');
+    const bLbl=document.createElement('div'); bLbl.className='cmp-lbl batch';
+    bLbl.innerHTML='⬛ Batch Model';
+    bWrap.appendChild(bLbl);
+    const bRes=document.createElement('div'); bRes.id='cmpResB';
+    bWrap.appendChild(bRes); det.appendChild(bWrap);
+
+    const pWrap=document.createElement('div');
+    const pLbl=document.createElement('div'); pLbl.className='cmp-lbl pool';
+    pLbl.innerHTML='🟢 Worker Pool';
+    pWrap.appendChild(pLbl);
+    const pRes=document.createElement('div'); pRes.id='cmpResP';
+    pWrap.appendChild(pRes); det.appendChild(pWrap);
+
+    renderOpt(d.batch,'cmpResB','');
+    renderOpt(d.pool,'cmpResP','');
+  },80);
+}
+
+// ══════════════════════════════════════════════════
+// TOOLTIP (global, position:fixed)
+// ══════════════════════════════════════════════════
+(function(){
+  const tip=document.createElement('div'); tip.id='globalTip';
+  tip.innerHTML='<div class="tip-en" id="tipEn"></div><div class="tip-vi" id="tipVi"></div><div class="tip-arrow" id="tipArrow"></div>';
+  document.body.appendChild(tip);
+  let hideTimer=null;
+  document.addEventListener('mouseover',e=>{
+    const ico=e.target.closest('.tip-ico'); if(!ico||!ico.dataset.en) return;
+    clearTimeout(hideTimer);
+    $('tipEn').textContent=ico.dataset.en||'';
+    $('tipVi').textContent=ico.dataset.vi||'';
+    tip.classList.remove('show'); tip.style.display='block';
+    const rect=ico.getBoundingClientRect(); const tw=262; const m=10;
+    tip.style.left='-9999px'; tip.style.top='-9999px';
+    requestAnimationFrame(()=>{
+      const th=tip.offsetHeight;
+      let left=rect.left+rect.width/2-tw/2;
+      let top=rect.top-th-10;
+      left=Math.max(m,Math.min(left,window.innerWidth-tw-m));
+      const below=top<m; if(below) top=rect.bottom+10;
+      tip.style.left=left+'px'; tip.style.top=top+'px';
+      const arrow=$('tipArrow');
+      arrow.style.left=Math.max(14,Math.min(rect.left+rect.width/2-left,tw-14))+'px';
+      if(below){
+        arrow.style.bottom='auto'; arrow.style.top='-4px';
+        arrow.style.borderRight='none'; arrow.style.borderBottom='none';
+        arrow.style.borderLeft='1px solid #243a5e'; arrow.style.borderTop='1px solid #243a5e';
+        arrow.style.transform='translateX(-50%) rotate(45deg)';
+      } else {
+        arrow.style.top='auto'; arrow.style.bottom='-4px';
+        arrow.style.borderLeft='none'; arrow.style.borderTop='none';
+        arrow.style.borderRight='1px solid #243a5e'; arrow.style.borderBottom='1px solid #243a5e';
+        arrow.style.transform='translateX(-50%) rotate(45deg)';
+      }
+      requestAnimationFrame(()=>tip.classList.add('show'));
+    });
+  });
+  document.addEventListener('mouseout',e=>{
+    if(!e.target.closest('.tip-ico')) return;
+    hideTimer=setTimeout(()=>tip.classList.remove('show'),110);
+  });
+})();
+
+// ══════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════
+loadSample();
+ping();
+</script>
+</body>
+</html>

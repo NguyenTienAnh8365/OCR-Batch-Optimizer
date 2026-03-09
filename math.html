@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cơ sở Toán học – OCR Batch Optimizer v7</title>
+<script>MathJax={tex:{inlineMath:[['$','$']],displayMath:[['$$','$$']],tags:'ams'},startup:{typeset:false}};</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-chtml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Sora:wght@300;400;600;800&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;user-select:text;-webkit-user-select:text;}
+:root{
+  --bg:#080c14;--s1:#0d1321;--s2:#111827;--s3:#1a2438;
+  --bd:#1f2d45;--bd2:#2a3d5a;
+  --blue:#3b82f6;--indigo:#818cf8;--cyan:#06b6d4;
+  --green:#10b981;--yellow:#f59e0b;--red:#ef4444;--purple:#a855f7;
+  --text:#e2e8f0;--sub:#94a3b8;--muted:#64748b;
+  --mono:'JetBrains Mono',monospace;--sans:'Sora',sans-serif;
+}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px;line-height:1.8;}
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:3px;}
+
+.shell{display:flex;justify-content:center;min-height:100vh;}
+.sidebar{width:210px;flex-shrink:0;position:sticky;top:0;height:100vh;overflow-y:auto;
+  background:var(--s1);border-right:1px solid var(--bd);padding:1.75rem 0;}
+.main{width:780px;flex-shrink:0;padding:3rem 2.5rem 5rem;}
+.right-pad{width:210px;flex-shrink:0;}
+
+.sb-logo{padding:0 1.25rem 1.25rem;border-bottom:1px solid var(--bd);margin-bottom:.75rem;}
+.sb-logo .ver{font-family:var(--mono);font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--blue);margin-bottom:.3rem;}
+.sb-logo h3{font-size:.88rem;font-weight:700;line-height:1.35;}
+.nb{padding:.6rem 1.25rem .2rem;}
+.nb-title{font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:.35rem;}
+a.ni{display:flex;align-items:center;gap:.5rem;padding:.32rem .7rem;border-radius:6px;
+  font-size:.8rem;color:var(--sub);text-decoration:none;transition:background .12s,color .12s;margin-bottom:1px;}
+a.ni:hover{background:var(--s2);color:var(--text);}
+a.ni.on{background:rgba(59,130,246,.13);color:var(--blue);font-weight:600;}
+.nd{width:5px;height:5px;border-radius:50%;background:var(--bd2);flex-shrink:0;transition:background .12s;}
+a.ni.on .nd{background:var(--blue);}
+
+.ph{margin-bottom:3rem;}
+.pill{display:inline-flex;align-items:center;gap:.35rem;background:rgba(59,130,246,.09);
+  border:1px solid rgba(59,130,246,.22);color:var(--blue);font-size:.67rem;font-weight:700;
+  letter-spacing:.09em;text-transform:uppercase;padding:3px 11px;border-radius:99px;margin-bottom:1rem;}
+.ph h1{font-size:2.3rem;font-weight:800;letter-spacing:-.03em;line-height:1.1;
+  background:linear-gradient(135deg,#e2e8f0 30%,#64748b 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:.7rem;}
+.ph .sub{color:var(--sub);font-size:.88rem;line-height:1.65;}
+
+.sec{margin-bottom:3.75rem;scroll-margin-top:1.5rem;}
+.sh{display:flex;align-items:center;gap:.85rem;margin-bottom:1.3rem;
+  padding-bottom:.65rem;border-bottom:1px solid var(--bd);}
+.sn{font-family:var(--mono);font-size:.62rem;font-weight:600;color:var(--blue);opacity:.65;flex-shrink:0;}
+.sh h2{font-size:1.05rem;font-weight:700;}
+.nbadge,.ubadge{font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;padding:2px 7px;border-radius:99px;}
+.nbadge{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);color:var(--green);}
+.ubadge{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);color:var(--yellow);}
+h3{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--indigo);margin:1.4rem 0 .55rem;}
+p{color:var(--sub);font-size:.875rem;margin-bottom:.7rem;}
+
+.mb{background:var(--s1);border:1px solid var(--bd);border-left:3px solid var(--blue);
+  border-radius:8px;padding:.95rem 1.3rem;margin:.9rem 0;overflow-x:auto;position:relative;}
+.mb.g{border-left-color:var(--green);}
+.mb.y{border-left-color:var(--yellow);}
+.mb.r{border-left-color:var(--red);}
+.mb.p{border-left-color:var(--purple);}
+.mb.c{border-left-color:var(--cyan);}
+.ml{font-family:var(--mono);font-size:.62rem;font-weight:600;text-transform:uppercase;
+  letter-spacing:.09em;color:var(--blue);margin-bottom:.45rem;}
+.mb.g .ml{color:var(--green);}
+.mb.y .ml{color:var(--yellow);}
+.mb.r .ml{color:var(--red);}
+.mb.p .ml{color:var(--purple);}
+.mb.c .ml{color:var(--cyan);}
+
+.cb{background:#060912;border:1px solid var(--bd);border-radius:7px;padding:.85rem 1.2rem;
+  margin:.75rem 0;font-family:var(--mono);font-size:.76rem;color:#7dd3fc;
+  overflow-x:auto;white-space:pre;line-height:1.65;}
+.cb .cm{color:var(--muted);}
+.cb .kw{color:var(--indigo);}
+.cb .st{color:var(--green);}
+code{background:var(--s3);border-radius:4px;padding:1px 5px;font-family:var(--mono);font-size:.8em;color:#7dd3fc;}
+
+.co{display:flex;gap:.7rem;background:var(--s2);border:1px solid var(--bd);border-radius:8px;
+  padding:.8rem 1.1rem;margin:.9rem 0;font-size:.85rem;color:var(--sub);}
+.co .ic{flex-shrink:0;margin-top:.1rem;}
+.co.w{border-color:rgba(245,158,11,.28);background:rgba(245,158,11,.04);}
+.co.s{border-color:rgba(16,185,129,.28);background:rgba(16,185,129,.04);}
+.co.d{border-color:rgba(239,68,68,.28);background:rgba(239,68,68,.04);}
+.co.i{border-color:rgba(129,140,248,.28);background:rgba(129,140,248,.04);}
+
+.ic-card{background:var(--s1);border:1px solid var(--bd2);border-radius:11px;overflow:hidden;margin:1.4rem 0;}
+.ic-head{display:flex;align-items:center;justify-content:space-between;
+  padding:.8rem 1.25rem;border-bottom:1px solid var(--bd);background:var(--s2);}
+.ic-title{font-size:.8rem;font-weight:700;display:flex;align-items:center;gap:.5rem;}
+.ic-tag{font-family:var(--mono);font-size:.58rem;background:rgba(59,130,246,.14);
+  color:var(--blue);border-radius:4px;padding:2px 6px;}
+.ic-body{padding:1.25rem;}
+
+.ctrls{display:flex;flex-wrap:wrap;gap:.9rem 1.4rem;margin-bottom:1.15rem;}
+.cg{display:flex;flex-direction:column;gap:.28rem;}
+.cl{font-family:var(--mono);font-size:.62rem;color:var(--sub);text-transform:uppercase;letter-spacing:.06em;}
+.cr{display:flex;align-items:center;gap:.5rem;}
+.cv{font-family:var(--mono);font-size:.78rem;color:var(--blue);min-width:42px;text-align:right;font-weight:600;transition:color .2s;}
+input[type=range]{-webkit-appearance:none;width:120px;height:3px;background:var(--bd2);border-radius:2px;outline:none;cursor:pointer;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:var(--blue);cursor:pointer;transition:transform .15s,box-shadow .15s;}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.25);box-shadow:0 0 0 4px rgba(59,130,246,.18);}
+
+.cw{position:relative;height:210px;}
+.mg{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:.65rem;margin:.9rem 0;}
+.mc{background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:.75rem .9rem;text-align:center;}
+.mv{font-family:var(--mono);font-size:1.2rem;font-weight:600;color:var(--blue);line-height:1.2;margin-bottom:.22rem;transition:color .3s;}
+.mv.g{color:var(--green);}
+.mv.c{color:var(--cyan);}
+.mlb{font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+
+.brow{display:flex;align-items:center;gap:.7rem;margin-bottom:.38rem;}
+.blbl{font-family:var(--mono);font-size:.68rem;color:var(--sub);width:78px;flex-shrink:0;}
+.btr{flex:1;height:5px;background:var(--s3);border-radius:3px;overflow:hidden;}
+.bf{height:100%;border-radius:3px;transition:width .6s cubic-bezier(0.34,1.4,0.64,1);}
+.bnum{font-family:var(--mono);font-size:.7rem;color:var(--blue);width:52px;text-align:right;flex-shrink:0;}
+
+table{width:100%;border-collapse:collapse;font-size:.82rem;margin:.9rem 0;}
+th{background:var(--s2);color:var(--sub);font-weight:600;font-size:.68rem;text-transform:uppercase;
+  letter-spacing:.05em;padding:.55rem .9rem;text-align:left;border-bottom:1px solid var(--bd);}
+td{padding:.48rem .9rem;border-bottom:1px solid rgba(255,255,255,.03);color:var(--sub);font-size:.83rem;}
+tr:hover td{background:rgba(255,255,255,.018);}
+
+.flow{display:flex;flex-wrap:wrap;gap:.45rem;align-items:center;margin:.9rem 0;}
+.fb{background:var(--s2);border:1px solid var(--bd2);border-radius:6px;padding:.38rem .75rem;font-size:.77rem;font-weight:500;}
+.fa{color:var(--muted);font-size:.85rem;}
+.sg{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.65rem;margin-top:1.3rem;}
+.sc{background:var(--s1);border:1px solid var(--bd);border-radius:9px;padding:.9rem;}
+.sct{font-family:var(--mono);font-size:.62rem;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--blue);margin-bottom:.35rem;}
+.sc p{font-size:.8rem;margin:0;}
+footer{margin-top:4rem;padding-top:1.25rem;border-top:1px solid var(--bd);font-size:.72rem;color:var(--muted);font-family:var(--mono);}
+
+.ltx-btn{position:absolute;top:.6rem;right:.7rem;font-family:var(--mono);font-size:.58rem;font-weight:600;
+  letter-spacing:.05em;text-transform:uppercase;padding:2px 7px;border-radius:4px;border:1px solid var(--bd2);
+  background:var(--s3);color:var(--muted);cursor:pointer;transition:background .12s,color .12s,border-color .12s;
+  user-select:none;-webkit-user-select:none;}
+.ltx-btn:hover{background:var(--bd);color:var(--sub);border-color:var(--blue);}
+.ltx-src{display:none;margin-top:.75rem;background:#060912;border:1px solid var(--bd);border-radius:6px;
+  padding:.65rem .9rem;font-family:var(--mono);font-size:.75rem;color:#7dd3fc;
+  white-space:pre-wrap;word-break:break-all;line-height:1.6;}
+.ltx-src.open{display:block;}
+
+/* patch badge */
+.pbadge{font-size:.56rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;padding:2px 6px;
+  border-radius:99px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.25);color:var(--red);vertical-align:middle;}
+
+@media(max-width:860px){.sidebar,.right-pad{display:none;}.main{width:100%;padding:1.5rem;}}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sb-logo">
+    <div class="ver">v7 · patched · 2025</div>
+    <h3>OCR Batch<br>Optimizer</h3>
+  </div>
+  <div class="nb">
+    <div class="nb-title">Cơ sở</div>
+    <a class="ni on" href="#s1"><span class="nd"></span>Warm-up</a>
+    <a class="ni" href="#s2"><span class="nd"></span>Power Law</a>
+    <a class="ni" href="#s3"><span class="nd"></span>Makespan</a>
+    <a class="ni" href="#s4"><span class="nd"></span>Avg Latency</a>
+    <a class="ni" href="#s5"><span class="nd"></span>Throughput</a>
+    <a class="ni" href="#s6"><span class="nd"></span>p95 Latency</a>
+  </div>
+  <div class="nb">
+    <div class="nb-title">Mô hình mới</div>
+    <a class="ni" href="#s7"><span class="nd"></span>Worker Pool</a>
+    <a class="ni" href="#s8"><span class="nd"></span>Penalty</a>
+    <a class="ni" href="#s9"><span class="nd"></span>Hàm mục tiêu</a>
+  </div>
+  <div class="nb">
+    <div class="nb-title">Tổng kết</div>
+    <a class="ni" href="#s10"><span class="nd"></span>So sánh</a>
+    <a class="ni" href="#s11"><span class="nd"></span>Luồng tính toán</a>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<main class="main">
+
+<div class="ph">
+  <div class="pill">Technical Reference</div>
+  <h1>Cơ sở Toán học<br>OCR Batch Optimizer</h1>
+  <p class="sub">Diễn giải chính xác từng công thức · Worker Pool + Monte Carlo · p95 Latency · Interactive visualizations · v7 patched</p>
+</div>
+
+<!-- §1 -->
+<section class="sec" id="s1">
+  <div class="sh"><span class="sn">§01</span><h2>Chuẩn hoá dữ liệu benchmark — Warm-up Filtering</h2></div>
+  <p>Loại bỏ các lần chạy đầu tiên để tránh nhiễu do cold-start: load model, JIT compile, GPU cache miss.</p>
+  <div class="cb"><span class="kw">stable</span> = runs[self.warmup:]   <span class="cm"># warmup=1 → bỏ run đầu tiên</span></div>
+  <div class="mb">
+    <div class="ml">Thời gian trung bình batch-size m</div>
+    $$\bar{T}_{\text{avg}}(m) = \frac{1}{\sum_r |\text{run}_r|} \sum_{r} \sum_{t \in \text{run}_r} t$$
+    <button class="ltx-btn" onclick="toggleLatex(this)">LaTeX</button>
+    <div class="ltx-src">\bar{T}_{\text{avg}}(m) = \frac{1}{\sum_r |\text{run}_r|} \sum_{r} \sum_{t \in \text{run}_r} t</div>
+  </div>
+  <div class="mb g">
+    <div class="ml">Worst-case trung bình batch-size m</div>
+    $$\bar{T}_{\text{max}}(m) = \frac{1}{n_m} \sum_{r=1}^{n_m} \max(\text{run}_r)$$
+    <button class="ltx-btn" onclick="toggleLatex(this)">LaTeX</button>
+    <div class="ltx-src">\bar{T}_{\text{max}}(m) = \frac{1}{n_m} \sum_{r=1}^{n_m} \max(\text{run}_r)</div>
+  </div>
+
+  <!-- PATCH 1: clarify std definition -->
+  <div class="mb y">
+    <div class="ml">Độ lệch chuẩn và CV <span class="pbadge">patched</span></div>
+    $$\sigma_{\text{T\_max}}(m) = \text{std}\!\left(\{\max(\text{run}_r)\}_{r=1}^{n_m}\right)$$
+    $$\text{CV}(m) = \frac{\sigma_{\text{T\_max}}(m)}{\bar{T}_{\text{max}}(m)} \quad \text{Cảnh báo nếu CV} \geq 5\%$$
+    <button class="ltx-btn" onclick="toggleLatex(this)">LaTeX</button>
+    <div class="ltx-src">\sigma_{\text{T\_max}}(m) = \text{std}\!\left(\{\max(\text{run}_r)\}_{r=1}^{n_m}\right)
+\text{CV}(m) = \frac{\sigma_{\text{T\_max}}(m)}{\bar{T}_{\text{max}}(m)}</div>
+  </div>
+  <div class="co i">
+    <span class="ic">🔍</span>
+    <span><strong>Lưu ý quan trọng:</strong> <code>std</code> ở đây là độ lệch chuẩn của <em>các giá trị T_max qua từng run</em> (std of per-run maximums), không phải std của từng request riêng lẻ. Đây là cùng <code>std</code> được dùng trong §6 (p95) và §7 (Worker Pool sampling).</span>
+  </div>
+  <div class="cb">T_max_per_run = [<span class="kw">max</span>(run) <span class="kw">for</span> run <span class="kw">in</span> stable]
+T_max = float(np.mean(T_max_per_run))
+std   = float(np.std(T_max_per_run, ddof=1))   <span class="cm"># std của max mỗi run, không phải std của request</span></div>
+</section>
+
+<!-- §2 -->
+<section class="sec" id="s2">
+  <div class="sh"><span class="sn">§02</span><h2>Mô hình Power Law và phương pháp khớp đường cong</h2></div>
+  <div class="mb">
+    <div class="ml">Power Law — hàm nền tảng</div>
+    $$T(m) = T_0 \cdot m^{\alpha}$$
+    <button class="ltx-btn" onclick="toggleLatex(this)">LaTeX</button>
+    <div class="ltx-src">T(m) = T_0 \cdot m^{\alpha}</div>
+  </div>
+  <div class="mb">
+    <div class="ml">Weighted Nonlinear Least Squares</div>
+    $$(\hat{T}_0,\hat{\alpha}) = \arg\min_{T_0,\alpha} \sum_m w_m \cdot (T(m) - T_0 \cdot m^\alpha)^2, \quad w_m = \sqrt{n_m}$$
+    <button class="ltx-btn" onclick="toggleLatex(this)">LaTeX</button>
+    <div class="ltx-src">(\hat{T}_0,\hat{\alpha}) = \arg\min_{T_0,\alpha} \sum_m w_m \cdot (T(m) - T_0 \cdot m^\alpha)^2, \quad w_m = \sqrt{n_m}</div>
+  </div>
+  <div class="mb y">
+    <div class="ml">Độ lệch chuẩn α và R²</div>
+    $$\sigma_\alpha = \sqrt{\Sigma_{[1,1]}}, \qquad R^2 = 1 - \frac{\sum_m(T(m)-\hat{T}(m))^2}{\sum_m(T(m)-\bar{T})^2}$$
+    <button class="ltx-btn" onclick="toggleLatex(this)">LaTeX</button>
+    <div class="ltx-src">\sigma_\alpha = \sqrt{\Sigma_{[1,1]}}, \qquad R^2 = 1 - \frac{\sum_m(T(m)-\hat{T}(m))^2}{\sum_m(T(m)-\bar{T})^2}</div>
+  </div>
+  <div class="mb g">
+    <div class="ml">Chiến lược dự báo T(m)</div>
+    $$T(m) = \begin{cases} \bar{T}_{\text{profile}}(m) & m \in \text{data đo} \\ \hat{T}_0 \cdot m^{\hat\alpha} & \text{nội suy} \end{cases}$$
+    <button class="ltx-btn" onclick="toggleLatex(this)">LaTeX</button>
+    <div class="ltx-src">T(m) = \begin{cases} \bar{T}_{\text{profile}}(m) & m \in \text{data đo} \\ \hat{T}_0 \cdot m^{\hat\alpha} & \text{nội suy} \end{cases}</div>
+  </div>
+
+  <div class="ic-card">
+    <div class="ic-head">
+      <div class="ic-title">⚡ Power Law Visualizer <span class="ic-tag">interactive</span></div>
+    </div>
+    <div class="ic-body">
+      <div class="ctrls">
+        <div class="cg"><div class="cl">T₀ base time</div><div class="cr"><input type="range" id="t0" min="50" max="200" value="103"><span class="cv" id="t0v">103s</span></div></div>
+        <div class="cg"><div class="cl">α growth</div><div class="cr"><input type="range" id="al" min="0.3" max="1.5" value="0.80" step="0.01"><span class="cv" id="alv">0.80</span></div></div>
+        <div class="cg"><div class="cl">α_std uncertainty</div><div class="cr"><input type="range" id="as" min="0.01" max="0.35" value="0.06" step="0.01"><span class="cv" id="asv">0.06</span></div></div>
+      </div>
+      <div class="cw"><canvas id="plChart"></canvas></div>
+      <div class="co" style="margin-top:.75rem;"><span class="ic">💡</span><span>Vùng xám = uncertainty band: T(m) × exp(±1.645 × α_std / α). α_std cao → band rộng → penalty nội suy cao hơn.</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- §3 -->
+<section class="sec" id="s3">
+  <div class="sh"><span class="sn">§03</span><h2>Mô hình xếp lô (Batch) và Makespan</h2></div>
+  <div class="mb">
+    <div class="ml">Phân lô</div>
+    $$k = \left\lceil \frac{N}{m} \right\rceil, \qquad r = N \bmod m$$
+    <button class="ltx-btn" onclick="toggleLatex(this)">LaTeX</button>
+    <div class="ltx-src">k = \left\lceil \frac{N}{m} \right\rceil, \qquad r = N \bmod m</div>
+  </div>
+  <div class="mb">
+    <div class="ml">Makespan — thời gian hoàn thành tổng</div>
+    $$\text{Makespan}(N, m) = k \cdot \bar{T}_{\text{max}}(m)$$
+    <button class="ltx-btn" onclick="toggleLatex(this)">LaTeX</button>
+    <div class="ltx-src">\text{Makespan}(N, m) = k \cdot \bar{T}_{\text{max}}(m)</div>
+  </div>
+  <div class="co w"><span class="ic">⚠️</span>
+    <span><strong>Giả định Batch model:</strong> Lô cuối (dù ít hơn m request) vẫn dùng T_max(m) — conservative assumption. Batch mới chỉ bắt đầu khi toàn bộ batch trước xong.</span>
+  </div>
+</section>
+
+<!-- §4 -->
+<section class="sec" id="s4">
+  <div class="sh"><span class="sn">§04</span><h2>Độ trễ trung bình — Average Latency (Batch model)</h2></div>
+  <p>Một request ở lô thứ j chờ j−1 lô trước, rồi được xử lý trong lô của mình (thêm T_avg).</p>
+  <div class="mb g">
+    <div class="ml">Average Latency — r = 0 (N chia hết m)</div>
+    $$\bar{L}_{\text{batch}} = \bar{T}_{\text{avg}}(m) + \bar{T}_{\text{max}}(m) \cdot \frac{k-1}{2}$$
+    <button class="ltx-btn" onclick="toggleLatex(this)">LaTeX</button>
+    <div class="ltx-src">\bar{L}_{\text{batch}} = \bar{T}_{\text{avg}}(m) + \bar{T}_{\text{max}}(m) \cdot \frac{k-1}{2}</div>
+  </div>
+
+  <!-- PATCH 2: add k=1 edge case -->
+  <div class="mb y">
+    <div class="ml">Average Latency — r ≠ 0 (lô cuối không đầy) <span class="pbadge">patched</span></div>
+    $$\bar{L}_{\text{batch}} = \frac{(k-1) \cdot m \cdot L_{\text{full}} + r \cdot L_{\text{last}}}{N}$$
+    $$L_{\text{full}} = \begin{cases} \bar{T}_{\text{avg}} & k = 1 \\ \bar{T}_{\text{avg}} + \bar{T}_{\text{max}} \cdot \dfrac{k-2}{2} & k > 1 \end{cases}$$
+    $$L_{\text{last}} = \bar{T}_{\text{avg}} + (k-1) \cdot \bar{T}_{\text{max}}$$
+    <button class="ltx-btn" onclick="toggleLatex(this)">LaTeX</button>
+    <div class="ltx-src">\bar{L}_{\text{batch}} = \frac{(k-1) \cdot m \cdot L_{\text{full}} + r \cdot L_{\text{last}}}{N}
+L_{\text{full}} = \begin{cases} \bar{T}_{\text{avg}} & k = 1 \\ \bar{T}_{\text{avg}} + \bar{T}_{\text{max}} \cdot \frac{k-2}{2} & k > 1 \end{cases}
+L_{\text{last}} = \bar{T}_{\text{avg}} + (k-1) \cdot \bar{T}_{\text{max}}</div>
+  </div>
+  <div class="co i"><span class="ic">🔍</span>
+    <span><strong>Edge case k=1:</strong> Khi N &lt; m (chỉ có 1 lô không đầy), không có lô trước để chờ → <code>L_full = T_avg</code>. Code xử lý: <code>lat_full = t_avg + t_max*(k-2)/2 if k&gt;1 else t_avg</code>.</span>
+  </div>
+  <div class="cb">lat_full = t_avg + t_max * (k - 2) / 2   <span class="kw">if</span> k > 1   <span class="kw">else</span> t_avg   <span class="cm"># edge case k=1</span>
+lat_last = t_avg + t_max * (k - 1)
+avg_lat  = ((k - 1) * m * lat_full + r * lat_last) / N</div>
+</section>
+
+<!-- §5 -->
+<section class="sec" id="s5">
+  <div class="sh"><span class="sn">§05</span><h2>Throughput thực tế</h2></div>
+  <div class="mb">
+    <div class="ml">Throughput end-to-end</div>
+    $$\text{Throughput}(N,m) = \frac{N}{\text{Makespan}(N,m)} = \frac{N}{k \cdot \bar{T}_{\text{max}}(m)}$$
+    <button class="ltx-btn" onclick="toggleLatex(this)">LaTeX</button>
+    <div class="ltx-src">\text{Throughput}(N,m) = \frac{N}{\text{Makespan}(N,m)} = \frac{N}{k \cdot \bar{T}_{\text{max}}(m)}</div>
+  </div>
+  <div class="co s"><span class="ic">📊</span>
+    <span>Throughput thực tế khác throughput lý thuyết GPU (m/T(m)). Throughput thực tính trên toàn bộ N requests từ đầu đến cuối — phản ánh hiệu quả end-to-end. Khi N chia hết cho m, hai cách tính hội tụ: N/(N/m · T_max) = m/T_max.</span>
+  </div>
+</section>
+
+<!-- §6 -->
+<section class="sec" id="s6">
+  <div class="sh"><span class="sn">§06</span><h2>p95 Latency — Tài liệu mix độ dài</h2><span class="ubadge">updated</span></div>
+  <p>Khi tài liệu có độ dài khác nhau, variance của T_max tăng mạnh. Dùng p95 thay T_max để planning production:</p>
+  <div class="mb c">
+    <div class="ml">T_max p95 — đo thực</div>
+    $$T_{\text{max}}^{p95}(m) = \bar{T}_{\text{max}}(m) + 1.645 \cdot \sigma_{\text{T\_max}}(m)$$
+    <button class="ltx-btn" onclick="toggleLatex(this)">LaTeX</button>
+    <div class="ltx-src">T_{\text{max}}^{p95}(m) = \bar{T}_{\text{max}}(m) + 1.645 \cdot \sigma_{\text{T\_max}}(m)</div>
+  </div>
+  <p style="font-size:.82rem;">Trong đó $\sigma_{\text{T\_max}}(m)$ = std của per-run maximums (xem §01). Đây là Normal approximation với z=1.645 tương ứng 95th percentile.</p>
+  <div class="mb c">
+    <div class="ml">T_max p95 — nội suy (không có std đo thực)</div>
+    $$T_{\text{max}}^{p95}(m) = \hat{T}_{\text{max}}(m) \cdot \left(1 + 1.645 \cdot \frac{\sigma_\alpha}{\hat\alpha}\right)$$
+    <button class="ltx-btn" onclick="toggleLatex(this)">LaTeX</button>
+    <div class="ltx-src">T_{\text{max}}^{p95}(m) = \hat{T}_{\text{max}}(m) \cdot \left(1 + 1.645 \cdot \frac{\sigma_\alpha}{\hat\alpha}\right)</div>
+  </div>
+  <div class="cb"><span class="kw">def</span> T_max_p95(self, m):
+    <span class="kw">if</span> m <span class="kw">in</span> self.profile:
+        <span class="kw">return</span> self.profile[m][<span class="st">"T_max"</span>] + 1.645 * self.profile[m][<span class="st">"std"</span>]
+    t_pred = self.model_max[<span class="st">"t0"</span>] * (m ** self.model_max[<span class="st">"alpha"</span>])
+    unc    = self.model_max[<span class="st">"alpha_std"</span>] / self.model_max[<span class="st">"alpha"</span>]
+    <span class="kw">return</span> t_pred * (1 + 1.645 * unc)</div>
+</section>
+
+<!-- §7 -->
+<section class="sec" id="s7">
+  <div class="sh"><span class="sn">§07</span><h2>Worker Pool Model — Monte Carlo</h2><span class="nbadge">new</span></div>
+  <p>Trong Batch model, request phải đợi cả batch hoàn thành. Worker Pool giải quyết vấn đề này: slot free ngay khi job xong, request tiếp theo vào luôn.</p>
+
+  <div class="ic-card">
+    <div class="ic-head">
+      <div class="ic-title">🔄 Batch vs Worker Pool — Timeline <span class="ic-tag">interactive</span></div>
+    </div>
+    <div class="ic-body">
+      <div class="ctrls">
+        <div class="cg"><div class="cl">N requests</div><div class="cr"><input type="range" id="tlN" min="2" max="8" value="4"><span class="cv" id="tlNv">4</span></div></div>
+        <div class="cg"><div class="cl">Workers m</div><div class="cr"><input type="range" id="tlM" min="1" max="4" value="2"><span class="cv" id="tlMv">2</span></div></div>
+      </div>
+      <div id="tlViz" style="font-family:var(--mono);font-size:.73rem;"></div>
+      <div class="mg" id="tlMetrics" style="margin-top:.9rem;"></div>
+    </div>
+  </div>
+
+  <h3>Vì sao cần Monte Carlo</h3>
+  <p>Worker Pool không có công thức đóng vì thứ tự hoàn thành phụ thuộc vào distribution của job times. Dùng log-normal sampling + simulation:</p>
+
+  <!-- PATCH 3: std clarification + extrapolation fallback -->
+  <div class="mb p">
+    <div class="ml">Tham số log-normal từ T_avg và std <span class="pbadge">patched</span></div>
+    $$\mu = \bar{T}_{\text{avg}}(m), \qquad
+      \sigma = \begin{cases} \sigma_{\text{T\_max}}(m) & m \in \text{profile (đo thực)} \\ 0.1 \cdot \mu & m \notin \text{profile (fallback nội suy)} \end{cases}$$
+    <button class="ltx-btn" onclick="toggleLatex(this)">LaTeX</button>
+    <div class="ltx-src">\mu = \bar{T}_{\text{avg}}(m), \quad
+\sigma = \begin{cases} \sigma_{\text{T\_max}}(m) & m \in \text{profile} \\ 0.1 \cdot \mu & m \notin \text{profile} \end{cases}</div>
+  </div>
+  <div class="co i"><span class="ic">🔍</span>
+    <span><strong>Lưu ý:</strong> <code>σ</code> dùng trong sampling là <code>std của T_max per run</code> (xem §01), không phải std của từng request. Khi nội suy (m không trong profile), code dùng fallback heuristic <code>std = T_avg × 0.1</code> (10%).</span>
+  </div>
+  <div class="mb p">
+    <div class="ml">Log-normal job time sampling</div>
+    $$t_i \sim \text{LogNormal}(\mu_\ell, \sigma_\ell^2), \quad \sigma_\ell^2 = \ln\!\left(1 + \frac{\sigma^2}{\mu^2}\right), \quad \mu_\ell = \ln(\mu) - \frac{\sigma_\ell^2}{2}$$
+    <button class="ltx-btn" onclick="toggleLatex(this)">LaTeX</button>
+    <div class="ltx-src">t_i \sim \text{LogNormal}(\mu_\ell, \sigma_\ell^2), \quad \sigma_\ell^2 = \ln\!\left(1 + \frac{\sigma^2}{\mu^2}\right), \quad \mu_\ell = \ln(\mu) - \frac{\sigma_\ell^2}{2}</div>
+  </div>
+  <div class="mb p">
+    <div class="ml">Worker Pool — dispatch và finish time</div>
+    $$w^* = \arg\min_{w} \text{worker\_free}[w], \qquad f_i = \text{worker\_free}[w^*] + t_i$$
+    $$\text{worker\_free}[w^*] \leftarrow f_i$$
+    <button class="ltx-btn" onclick="toggleLatex(this)">LaTeX</button>
+    <div class="ltx-src">w^* = \arg\min_{w} \text{worker\_free}[w], \qquad f_i = \text{worker\_free}[w^*] + t_i
+\text{worker\_free}[w^*] \leftarrow f_i</div>
+  </div>
+  <div class="mb g">
+    <div class="ml">Metrics từ n_sim simulations</div>
+    $$\bar{L}_{\text{pool}} = \mathbb{E}\!\left[\frac{1}{N}\sum_{i=1}^N f_i\right], \qquad \text{Makespan}_{\text{pool}} = \mathbb{E}\!\left[\max_i f_i\right]$$
+    $$\text{use\_p95: } \bar{L}_{\text{pool}} = \text{percentile}_{95}\!\left(\left\{\frac{1}{N}\sum f_i\right\}_{\text{sim}}\right)$$
+    <button class="ltx-btn" onclick="toggleLatex(this)">LaTeX</button>
+    <div class="ltx-src">\bar{L}_{\text{pool}} = \mathbb{E}\!\left[\frac{1}{N}\sum_{i=1}^N f_i\right], \quad \text{Makespan}_{\text{pool}} = \mathbb{E}\!\left[\max_i f_i\right]
+\text{use\_p95: } \bar{L} = \text{percentile}_{95}\left(\left\{\tfrac{1}{N}\sum f_i\right\}_{\text{sim}}\right)</div>
+  </div>
+  <div class="cb"><span class="cm"># _sample_job_times() — chú ý nguồn của std</span>
+mu  = self.T_avg(m)
+std = self.profile[m][<span class="st">"std"</span>] <span class="kw">if</span> m <span class="kw">in</span> self.profile <span class="kw">else</span> mu * 0.1   <span class="cm"># fallback 10%</span>
+<span class="kw">if</span> std <= 0:
+    <span class="kw">return</span> np.full(n_jobs, mu)
+sigma2 = math.log(1 + (std / mu) ** 2)
+mu_ln  = math.log(mu) - sigma2 / 2</div>
+
+  <div class="ic-card">
+    <div class="ic-head">
+      <div class="ic-title">📊 Batch vs Pool — Latency so sánh theo m <span class="ic-tag">approximate</span></div>
+    </div>
+    <div class="ic-body">
+      <div class="co w" style="margin-bottom:.9rem;"><span class="ic">⚠️</span><span>Biểu đồ dưới dùng hàm xấp xỉ để so sánh trực quan nhanh, <strong>không phải Monte Carlo thực</strong>. Kết quả chính xác phải gọi API endpoint <code>/compare</code>.</span></div>
+      <div class="ctrls">
+        <div class="cg"><div class="cl">T_avg (s)</div><div class="cr"><input type="range" id="cTa" min="50" max="300" value="155" step="5"><span class="cv" id="cTav">155s</span></div></div>
+        <div class="cg"><div class="cl">T_max (s)</div><div class="cr"><input type="range" id="cTm" min="50" max="400" value="185" step="5"><span class="cv" id="cTmv">185s</span></div></div>
+        <div class="cg"><div class="cl">std (s)</div><div class="cr"><input type="range" id="cSt" min="0" max="100" value="20" step="5"><span class="cv" id="cStv">20s</span></div></div>
+        <div class="cg"><div class="cl">N requests</div><div class="cr"><input type="range" id="cN" min="2" max="16" value="8"><span class="cv" id="cNv">8</span></div></div>
+      </div>
+      <div class="cw"><canvas id="cmpChart"></canvas></div>
+      <div class="co" id="cmpInfo" style="margin-top:.75rem;font-size:.8rem;"><span class="ic">💡</span><span id="cmpTxt"></span></div>
+    </div>
+  </div>
+</section>
+
+<!-- §8 -->
+<section class="sec" id="s8">
+  <div class="sh"><span class="sn">§08</span><h2>Hàm phạt đa thành phần — Penalty Function</h2></div>
+  <p>Penalty chỉ áp dụng khi m > m_measured (vùng nội suy). Bốn thành phần cộng lại:</p>
+
+  <!-- PATCH 4: add alpha=0 fallback for unc -->
+  <div class="mb r">
+    <div class="ml">Penalty tổng <span class="pbadge">patched</span></div>
+    $$P(m) = \begin{cases} 0 & m \leq m_{\text{measured}} \\[8pt]
+    \underbrace{0.025}_{\text{base}}
+    + \underbrace{0.035 \cdot \log_2\!\tfrac{m}{m_{\text{meas}}}}_{\text{extrap distance}}
+    + \underbrace{0.18 \cdot \text{unc}(m)}_{\text{model uncertainty}}
+    + \underbrace{P_{\text{sat}}(m)}_{\text{VRAM}} & m > m_{\text{measured}} \end{cases}$$
+    $$\text{unc}(m) = \begin{cases} \sigma_\alpha / \hat\alpha & \hat\alpha > 0 \\ 0.2 & \hat\alpha = 0 \text{ (fallback)} \end{cases}$$
+    $$P_{\text{sat}}(m) = 0.18 \cdot \left(\tfrac{m}{m_{\text{cap}}} - 0.7\right)^2 \cdot \mathbf{1}\!\left[\tfrac{m}{m_{\text{cap}}} > 0.7\right]$$
+    <button class="ltx-btn" onclick="toggleLatex(this)">LaTeX</button>
+    <div class="ltx-src">P(m) = \begin{cases} 0 & m \leq m_{\text{measured}} \\ 0.025 + 0.035 \cdot \log_2\!\tfrac{m}{m_{\text{meas}}} + 0.18 \cdot \text{unc}(m) + P_{\text{sat}}(m) & m > m_{\text{measured}} \end{cases}
+\text{unc}(m) = \begin{cases} \sigma_\alpha / \hat\alpha & \hat\alpha > 0 \\ 0.2 & \hat\alpha = 0 \end{cases}
+P_{\text{sat}}(m) = 0.18 \cdot \left(\tfrac{m}{m_{\text{cap}}} - 0.7\right)^2 \cdot \mathbf{1}[m/m_{\text{cap}} > 0.7]</div>
+  </div>
+  <div class="co i"><span class="ic">🔍</span>
+    <span>Khi <code>alpha = 0</code> (fit degeneracy), hệ thống fallback về <code>unc = 0.2</code> — tức là luôn phạt 18% × 0.2 = 3.6% uncertainty tối thiểu. Code: <code>unc = alpha_std/alpha if alpha &gt; 0 else 0.2</code>.</span>
+  </div>
+  <div class="cb">dist       = math.log(m / self.m_max_measured) / math.log(2)   <span class="cm"># log₂, không phải ln!</span>
+unc        = (self.model_max[<span class="st">"alpha_std"</span>] / self.model_max[<span class="st">"alpha"</span>]
+              <span class="kw">if</span> self.model_max[<span class="st">"alpha"</span>] > 0 <span class="kw">else</span> 0.2)   <span class="cm"># fallback khi alpha=0</span>
+mem_ratio  = m / self.m_hard_cap
+saturation = 0.18 * (mem_ratio - 0.7) ** 2   <span class="kw">if</span> mem_ratio > 0.7   <span class="kw">else</span> 0.0</div>
+
+  <div class="ic-card">
+    <div class="ic-head">
+      <div class="ic-title">🎛 Penalty Breakdown Visualizer <span class="ic-tag">interactive</span></div>
+    </div>
+    <div class="ic-body">
+      <div class="ctrls">
+        <div class="cg"><div class="cl">m (nội suy)</div><div class="cr"><input type="range" id="pm" min="5" max="16" value="8"><span class="cv" id="pmv">8</span></div></div>
+        <div class="cg"><div class="cl">m_max_measured</div><div class="cr"><input type="range" id="pmm" min="2" max="8" value="4"><span class="cv" id="pmmv">4</span></div></div>
+        <div class="cg"><div class="cl">α_std / α</div><div class="cr"><input type="range" id="pu" min="0.01" max="0.5" value="0.08" step="0.01"><span class="cv" id="puv">0.08</span></div></div>
+        <div class="cg"><div class="cl">m_hard_cap</div><div class="cr"><input type="range" id="pc" min="6" max="20" value="12"><span class="cv" id="pcv">12</span></div></div>
+      </div>
+      <div id="penBreak"></div>
+      <div class="cw" style="height:190px;margin-top:.75rem;"><canvas id="penChart"></canvas></div>
+    </div>
+  </div>
+</section>
+
+<!-- §9 -->
+<section class="sec" id="s9">
+  <div class="sh"><span class="sn">§09</span><h2>Hàm mục tiêu và tiêu chí chọn tối ưu</h2></div>
+  <div class="mb">
+    <div class="ml">Hàm mục tiêu — Effective Latency</div>
+    $$\mathcal{L}_{\text{eff}}(N, m) = \bar{L}(N,m) \cdot \bigl(1 + P(m)\bigr)$$
+    <button class="ltx-btn" onclick="toggleLatex(this)">LaTeX</button>
+    <div class="ltx-src">\mathcal{L}_{\text{eff}}(N, m) = \bar{L}(N,m) \cdot \bigl(1 + P(m)\bigr)</div>
+  </div>
+  <div class="mb g">
+    <div class="ml">Tiêu chí chọn m tối ưu</div>
+    $$m^* = \arg\min_{m \in [1,\, \min(N,\, m_{\text{hard\_cap}})]} \;\mathcal{L}_{\text{eff}}(N, m)$$
+    <button class="ltx-btn" onclick="toggleLatex(this)">LaTeX</button>
+    <div class="ltx-src">m^* = \arg\min_{m \in [1,\, \min(N,\, m_{\text{hard\_cap}})]} \;\mathcal{L}_{\text{eff}}(N, m)</div>
+  </div>
+  <div class="co s"><span class="ic">🎯</span>
+    <span><strong>Triết lý:</strong> Tối thiểu hoá latency trung bình user cảm nhận, không phải makespan hay throughput. Penalty phạt thêm khi quyết định dựa trên vùng không chắc chắn hoặc gần giới hạn phần cứng.</span>
+  </div>
+</section>
+
+<!-- §10 -->
+<section class="sec" id="s10">
+  <div class="sh"><span class="sn">§10</span><h2>So sánh hai mô hình</h2></div>
+  <table>
+    <thead><tr><th>Tiêu chí</th><th>Batch Model</th><th>Worker Pool Model</th></tr></thead>
+    <tbody>
+      <tr><td>Dispatch tiếp</td><td>Sau khi toàn bộ batch xong</td><td>Ngay khi 1 slot free</td></tr>
+      <tr><td>Job times đồng nhất</td><td>Kết quả giống nhau</td><td>Kết quả giống nhau</td></tr>
+      <tr><td>Job times khác nhau</td><td>Chậm — job ngắn chờ job dài</td><td>Nhanh hơn đáng kể</td></tr>
+      <tr><td>Công thức</td><td>Closed-form</td><td>Monte Carlo (n_sim lần)</td></tr>
+      <tr><td>Std dùng cho sampling</td><td>N/A</td><td>std(T_max per run) hoặc μ×0.1</td></tr>
+      <tr><td>Phù hợp với</td><td>Tài liệu cùng loại, đồng nhất</td><td>Tài liệu mix độ dài (production)</td></tr>
+      <tr><td>m* thường</td><td>Nhỏ hơn (penalty lô dài)</td><td>Lớn hơn (slot fill nhanh)</td></tr>
+      <tr><td>use_p95</td><td>T_max_p95 trong công thức batch</td><td>percentile(95) của simulation</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- §11 -->
+<section class="sec" id="s11">
+  <div class="sh"><span class="sn">§11</span><h2>Luồng tính toán tổng thể</h2></div>
+  <div style="display:flex;flex-direction:column;gap:.35rem;margin:1.1rem 0;">
+    <div class="flow">
+      <div class="fb" style="border-color:var(--blue);">Raw benchmark data</div>
+      <div class="fa">→</div><div class="fb">Warm-up filter</div>
+      <div class="fa">→</div><div class="fb">T̄_avg(m), T̄_max(m), σ_T_max(m)</div>
+    </div>
+    <div style="padding-left:6.5rem;color:var(--muted);font-size:.78rem;">↓</div>
+    <div class="flow">
+      <div class="fb" style="border-color:var(--indigo);">Weighted Power Law Fit</div>
+      <div class="fa">→</div><div class="fb">(T₀, α, σ_α, R²)</div>
+      <div class="fa">→</div><div class="fb">Extrapolation T(m) + unc fallback</div>
+    </div>
+    <div style="padding-left:6.5rem;color:var(--muted);font-size:.78rem;">↓</div>
+    <div class="flow">
+      <div class="fb" style="border-color:var(--green);">mode = batch | pool</div>
+      <div class="fa">→</div><div class="fb" style="border-color:var(--green);">use_p95 = True | False</div>
+    </div>
+    <div style="padding-left:6.5rem;color:var(--muted);font-size:.78rem;">↓</div>
+    <div class="flow">
+      <div class="fb">avg_latency, makespan, tput</div>
+      <div class="fa">+</div><div class="fb" style="border-color:var(--yellow);">Penalty P(m)</div>
+      <div class="fa">→</div><div class="fb" style="border-color:var(--red);">L_eff = L̄·(1+P)</div>
+      <div class="fa">→</div><div class="fb" style="border-color:var(--green);background:rgba(16,185,129,.06);">m* = argmin L_eff</div>
+    </div>
+  </div>
+
+  <div class="sg">
+    <div class="sc"><div class="sct">Power Law</div><p>T(m) = T₀·mᵅ · weighted fit · guardrail R²,α</p></div>
+    <div class="sc"><div class="sct">Makespan</div><p>k·T̄_max — conservative (kể cả lô cuối)</p></div>
+    <div class="sc"><div class="sct">Avg Lat (batch r=0)</div><p>T̄_avg + T̄_max·(k−1)/2</p></div>
+    <div class="sc"><div class="sct">Avg Lat (batch r≠0)</div><p>L_full: k=1→T_avg, k>1→+T_max(k-2)/2</p></div>
+    <div class="sc"><div class="sct">Avg Lat (pool)</div><p>E[mean(f_i)] Monte Carlo n_sim lần</p></div>
+    <div class="sc"><div class="sct">σ trong pool</div><p>std(T_max/run) hoặc μ×0.1 khi nội suy</p></div>
+    <div class="sc"><div class="sct">p95 T_max</div><p>T̄_max+1.645σ đo thực · T̂(1+1.645·σ_α/α) nội suy</p></div>
+    <div class="sc"><div class="sct">Penalty (log₂)</div><p>0.025+0.035·log₂+0.18·unc+P_sat · unc fallback=0.2</p></div>
+  </div>
+
+  <footer>OCR Batch Optimizer v7 · Mathematical Reference · patched · 2025<br>
+  Patches: (1) std definition clarified (2) k=1 edge case (3) pool σ fallback (4) unc=0.2 fallback</footer>
+</section>
+
+</main>
+<div class="right-pad"></div>
+</div>
+
+<script>
+// ── LATEX TOGGLE ──
+function toggleLatex(btn){
+  const src=btn.nextElementSibling;
+  const open=src.classList.toggle('open');
+  btn.textContent=open?'Hide':'LaTeX';
+  btn.style.color=open?'var(--blue)':'';
+  btn.style.borderColor=open?'var(--blue)':'';
+}
+
+// ── CHART DEFAULTS ──
+const gridColor='#1a2438', tickColor='#4b607a';
+Chart.defaults.animation={duration:500,easing:'easeInOutQuart'};
+
+// ── §2 POWER LAW CHART ──
+const measured=[{m:1,T:108},{m:2,T:162.7},{m:4,T:327.3}];
+const measAvg =[{m:1,T:108},{m:2,T:154.5},{m:4,T:285.9}];
+let plChart=new Chart(document.getElementById('plChart'),{
+  type:'scatter',
+  data:{datasets:[
+    {label:'Upper band',data:[],borderColor:'transparent',backgroundColor:'rgba(59,130,246,.07)',pointRadius:0,fill:'+1',tension:.4,showLine:true,order:4},
+    {label:'Lower band',data:[],borderColor:'transparent',backgroundColor:'rgba(59,130,246,.07)',pointRadius:0,fill:false,tension:.4,showLine:true,order:5},
+    {label:'T(m) fit',data:[],borderColor:'#3b82f6',backgroundColor:'transparent',pointRadius:0,tension:.4,showLine:true,borderWidth:2,order:3},
+    {label:'T_max đo thực',data:measured.map(d=>({x:d.m,y:d.T})),borderColor:'#10b981',backgroundColor:'#10b981',pointRadius:6,showLine:false,order:1},
+    {label:'T_avg đo thực',data:measAvg.map(d=>({x:d.m,y:d.T})),borderColor:'#f59e0b',backgroundColor:'#f59e0b',pointRadius:5,pointStyle:'triangle',showLine:false,order:2},
+  ]},
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{labels:{color:'#94a3b8',font:{size:10,family:'JetBrains Mono'},boxWidth:11}}},
+    scales:{
+      x:{title:{display:true,text:'m (workers)',color:tickColor,font:{size:10}},grid:{color:gridColor},ticks:{color:tickColor,font:{size:10}}},
+      y:{title:{display:true,text:'T (seconds)',color:tickColor,font:{size:10}},grid:{color:gridColor},ticks:{color:tickColor,font:{size:10}}}
+    }}
+});
+function updPL(){
+  const t0=+document.getElementById('t0').value;
+  const al=+document.getElementById('al').value;
+  const as=+document.getElementById('as').value;
+  document.getElementById('t0v').textContent=t0+'s';
+  document.getElementById('alv').textContent=al.toFixed(2);
+  document.getElementById('asv').textContent=as.toFixed(2);
+  const ms=[1,1.5,2,2.5,3,3.5,4,5,6,8];
+  plChart.data.datasets[0].data=ms.map(m=>({x:m,y:t0*Math.pow(m,al)*Math.exp(1.645*as/al)}));
+  plChart.data.datasets[1].data=ms.map(m=>({x:m,y:t0*Math.pow(m,al)*Math.exp(-1.645*as/al)}));
+  plChart.data.datasets[2].data=ms.map(m=>({x:m,y:t0*Math.pow(m,al)}));
+  plChart.update();
+}
+['t0','al','as'].forEach(id=>document.getElementById(id).addEventListener('input',updPL));
+updPL();
+
+// ── §7 TIMELINE VIZ ──
+const JT=[30,80,20,70,40,90,25,60];
+const C=['#3b82f6','#10b981','#f59e0b','#a855f7','#ef4444','#06b6d4','#ec4899','#84cc16'];
+function buildTL(){
+  const N=+document.getElementById('tlN').value;
+  const m=+document.getElementById('tlM').value;
+  document.getElementById('tlNv').textContent=N;
+  document.getElementById('tlMv').textContent=m;
+  const jobs=JT.slice(0,N);
+  const batches=[];
+  for(let i=0;i<N;i+=m) batches.push(jobs.slice(i,Math.min(i+m,N)));
+  let bt=0;const bF=[];
+  batches.forEach(b=>{bt+=Math.max(...b);b.forEach(()=>bF.push(bt));});
+  const bAvg=bF.reduce((a,b)=>a+b,0)/N;
+  const wF=new Array(m).fill(0);const pF=[];
+  const wH=Array.from({length:m},()=>[]);
+  jobs.forEach((t,i)=>{
+    const w=wF.indexOf(Math.min(...wF));
+    const end=wF[w]+t;
+    wH[w].push({start:wF[w],end,t,i});
+    wF[w]=end;pF.push(end);
+  });
+  const pAvg=pF.reduce((a,b)=>a+b,0)/N;
+  const pMake=Math.max(...pF);
+  const sc=2.5;let html='';
+  html+=`<div style="color:var(--sub);font-size:.65rem;text-transform:uppercase;letter-spacing:.07em;margin-bottom:.4rem;">Batch Model</div>`;
+  for(let w=0;w<m;w++){
+    html+=`<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:3px;"><div style="width:58px;color:var(--muted);font-size:.65rem;text-align:right;flex-shrink:0;">W${w+1}</div><div style="position:relative;height:18px;background:var(--s3);border-radius:3px;overflow:hidden;flex:1;">`;
+    let t=0;
+    batches.forEach((b,bi)=>{
+      const maxT=Math.max(...b);
+      if(w<b.length){const left=t*sc,width=b[w]*sc;html+=`<div style="position:absolute;left:${left}px;width:${Math.max(width-1,2)}px;top:2px;height:14px;background:${C[bi%C.length]};border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:.6rem;color:#fff;">${b[w]}s</div>`;}
+      t+=maxT;
+    });
+    html+=`</div></div>`;
+  }
+  html+=`<div style="margin:.65rem 0 .4rem;color:var(--sub);font-size:.65rem;text-transform:uppercase;letter-spacing:.07em;">Worker Pool</div>`;
+  for(let w=0;w<m;w++){
+    html+=`<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:3px;"><div style="width:58px;color:var(--muted);font-size:.65rem;text-align:right;flex-shrink:0;">W${w+1}</div><div style="position:relative;height:18px;background:var(--s3);border-radius:3px;overflow:hidden;flex:1;">`;
+    wH[w].forEach(({start,end,t,i})=>{const left=start*sc,width=(end-start)*sc;html+=`<div style="position:absolute;left:${left}px;width:${Math.max(width-1,2)}px;top:2px;height:14px;background:${C[i%C.length]};border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:.6rem;color:#fff;">${t}s</div>`;});
+    html+=`</div></div>`;
+  }
+  document.getElementById('tlViz').innerHTML=html;
+  const imp=((bAvg-pAvg)/bAvg*100).toFixed(1);
+  document.getElementById('tlMetrics').innerHTML=`
+    <div class="mc"><div class="mv">${bAvg.toFixed(0)}s</div><div class="mlb">Batch avg lat</div></div>
+    <div class="mc"><div class="mv g">${pAvg.toFixed(0)}s</div><div class="mlb">Pool avg lat</div></div>
+    <div class="mc"><div class="mv ${imp>0?'g':''}">${imp>0?'−':''}${Math.abs(imp)}%</div><div class="mlb">Cải thiện</div></div>
+    <div class="mc"><div class="mv c">${pMake.toFixed(0)}s</div><div class="mlb">Pool makespan</div></div>`;
+}
+['tlN','tlM'].forEach(id=>document.getElementById(id).addEventListener('input',buildTL));
+buildTL();
+
+// ── §7 COMPARISON CHART (approximate) ──
+function batchLat(N,m,Tavg,Tmax){
+  const k=Math.ceil(N/m),r=N%m;
+  if(r===0)return Tavg+Tmax*(k-1)/2;
+  const lf=k>1?Tavg+Tmax*(k-2)/2:Tavg,ll=Tavg+Tmax*(k-1);
+  return((k-1)*m*lf+r*ll)/N;
+}
+function poolLat(N,m,Tavg,std){
+  if(std<=0)return batchLat(N,m,Tavg,Tavg);
+  const red=Math.min(0.32,std/Tavg*0.48);
+  return batchLat(N,m,Tavg,Tavg)*(1-red*(1-1/m));
+}
+let cmpChart=new Chart(document.getElementById('cmpChart'),{
+  type:'bar',
+  data:{labels:[],datasets:[
+    {label:'Batch model',data:[],backgroundColor:'rgba(59,130,246,.55)',borderColor:'#3b82f6',borderWidth:1,borderRadius:4},
+    {label:'Worker Pool (approx)',data:[],backgroundColor:'rgba(16,185,129,.55)',borderColor:'#10b981',borderWidth:1,borderRadius:4},
+  ]},
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{labels:{color:'#94a3b8',font:{size:10,family:'JetBrains Mono'},boxWidth:11}}},
+    scales:{
+      x:{grid:{color:gridColor},ticks:{color:tickColor,font:{size:10}}},
+      y:{title:{display:true,text:'avg latency (s)',color:tickColor,font:{size:10}},grid:{color:gridColor},ticks:{color:tickColor,font:{size:10}}}
+    }}
+});
+function updCmp(){
+  try{
+    const Ta=+document.getElementById('cTa').value,Tm=+document.getElementById('cTm').value;
+    const St=+document.getElementById('cSt').value,N=+document.getElementById('cN').value;
+    document.getElementById('cTav').textContent=Ta+'s';document.getElementById('cTmv').textContent=Tm+'s';
+    document.getElementById('cStv').textContent=St+'s';document.getElementById('cNv').textContent=N;
+    const ms=[];for(let m=1;m<=Math.min(N,8);m++)if(N%m===0)ms.push(m);
+    if(!ms.length)return;
+    const bLats=ms.map(m=>batchLat(N,m,Ta,Tm));
+    const pLats=ms.map(m=>poolLat(N,m,Ta,St));
+    cmpChart.data.labels=ms.map(m=>`m=${m}`);
+    cmpChart.data.datasets[0].data=bLats;
+    cmpChart.data.datasets[1].data=pLats;
+    cmpChart.update();
+    const bBest=ms[bLats.indexOf(Math.min(...bLats))],pBest=ms[pLats.indexOf(Math.min(...pLats))];
+    const g=((Math.min(...bLats)-Math.min(...pLats))/Math.min(...bLats)*100).toFixed(1);
+    document.getElementById('cmpTxt').innerHTML=`Batch → optimal <code>m=${bBest}</code> · Pool → optimal <code>m=${pBest}</code> · Cải thiện (approx): <strong style="color:var(--green)">${+g>0?g+'%':'không đáng kể khi std thấp'}</strong>`;
+  }catch(e){console.error(e);}
+}
+['cTa','cTm','cSt','cN'].forEach(id=>document.getElementById(id).addEventListener('input',updCmp));
+updCmp();
+
+// ── §8 PENALTY CHART ──
+function pen(m,mM,unc,mC){
+  if(m<=mM||mM<=0)return 0;
+  const dist=Math.log(m/mM)/Math.log(2);
+  const mr=m/Math.max(mC,1);
+  const sat=mr>0.7?0.18*(mr-0.7)**2:0;
+  return 0.025+0.035*dist+0.18*unc+sat;
+}
+let penChart=null;
+function mkPenChart(labels,ds0data,ds0radius,ds0colors,ds1data,ds1radius){
+  if(penChart){try{penChart.destroy();}catch(e){}}
+  penChart=new Chart(document.getElementById('penChart'),{
+    type:'line',
+    data:{labels,datasets:[
+      {label:'Penalty P(m) %',data:ds0data,borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,.09)',fill:true,tension:.35,pointRadius:ds0radius,pointBackgroundColor:ds0colors,pointHoverRadius:9,borderWidth:2},
+      {label:'Đo thực (P=0)',data:ds1data,borderColor:'#10b981',backgroundColor:'#10b981',pointRadius:ds1radius,pointHoverRadius:7,showLine:false},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:350},
+      plugins:{legend:{labels:{color:'#94a3b8',font:{size:10,family:'JetBrains Mono'},boxWidth:11}},
+        tooltip:{callbacks:{label:ctx=>` ${ctx.dataset.label}: ${(ctx.parsed.y??0).toFixed(2)}%`}}},
+      scales:{
+        x:{grid:{color:gridColor},ticks:{color:tickColor,font:{size:9}}},
+        y:{title:{display:true,text:'Penalty (%)',color:tickColor,font:{size:10}},
+          grid:{color:gridColor},ticks:{color:tickColor,font:{size:10},callback:v=>v+'%'}}
+      }}
+  });
+}
+function updPen(){
+  try{
+    const mC=+document.getElementById('pc').value,mM=+document.getElementById('pmm').value;
+    const unc=+document.getElementById('pu').value;
+    const pmEl=document.getElementById('pm');
+    let mSel=+pmEl.value;
+    if(mSel>mC){mSel=mC;pmEl.value=mC;}
+    if(mSel<1){mSel=1;pmEl.value=1;}
+    document.getElementById('pmv').textContent=mSel;document.getElementById('pmmv').textContent=mM;
+    document.getElementById('puv').textContent=unc.toFixed(2);document.getElementById('pcv').textContent=mC;
+    const allMs=Array.from({length:mC},(_,i)=>i+1);
+    const pens=allMs.map(m=>pen(m,mM,unc,mC)*100);
+    const labels=allMs.map(m=>`m=${m}`);
+    const ds0r=allMs.map(m=>m===mSel?8:2);
+    const ds0c=allMs.map(m=>m===mSel?'#ef4444':'rgba(239,68,68,.45)');
+    const ds1d=allMs.map(m=>m<=mM?0:null);
+    const ds1r=allMs.map(m=>m<=mM?5:0);
+    mkPenChart(labels,pens,ds0r,ds0c,ds1d,ds1r);
+    if(mSel>mM){
+      const dist=Math.log(mSel/mM)/Math.log(2);
+      const mr=mSel/Math.max(mC,1);
+      const pB=0.025,pD=0.035*dist,pU=0.18*unc,pS=mr>0.7?0.18*(mr-0.7)**2:0;
+      const tot=pB+pD+pU+pS;const pct=v=>Math.round(v/tot*100);
+      const bar=(v,lbl,col)=>`<div class="brow"><div class="blbl">${lbl}</div><div class="btr"><div class="bf" style="width:${pct(v)}%;background:${col};"></div></div><div class="bnum">${(v*100).toFixed(1)}%</div></div>`;
+      document.getElementById('penBreak').innerHTML=
+        `<div style="font-size:.74rem;color:var(--sub);margin-bottom:.55rem;">P(m=${mSel}) = <strong style="color:var(--red)">${(tot*100).toFixed(1)}%</strong></div>`+
+        bar(pB,'Base','#3b82f6')+bar(pD,'Distance','#f59e0b')+bar(pU,'Uncertainty','#a855f7')+bar(pS,'VRAM sat.','#ef4444');
+    }else{
+      document.getElementById('penBreak').innerHTML=`<div style="font-size:.77rem;color:var(--green);margin-bottom:.5rem;">m=${mSel} ≤ m_measured=${mM} → P = 0% (đo thực, không phạt)</div>`;
+    }
+  }catch(e){console.error(e);}
+}
+['pm','pmm','pu','pc'].forEach(id=>document.getElementById(id).addEventListener('input',updPen));
+updPen();
+
+// ── NAV SCROLL TRACKING ──
+const secs=document.querySelectorAll('.sec');
+const navs=document.querySelectorAll('a.ni');
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      navs.forEach(n=>n.classList.remove('on'));
+      const a=document.querySelector(`a.ni[href="#${e.target.id}"]`);
+      if(a)a.classList.add('on');
+    }
+  });
+},{threshold:0.25});
+secs.forEach(s=>obs.observe(s));
+
+// ── MATHJAX ──
+window.addEventListener('load',()=>{if(window.MathJax)MathJax.typesetPromise();});
+</script>
+</body>
+</html>

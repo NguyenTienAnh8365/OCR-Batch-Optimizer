@@ -1,0 +1,19 @@
+{
+  "so_quyet_dinh": "",
+  "ngay_quyet_dinh": "",
+  "ten_du_an": "",
+  "chu_dau_tu": "",
+  "tong_muc_dau_tu": "",
+  "muc_tieu_du_an": "",
+  "quy_mo_dau_tu": "",
+  "thoi_gian_thuc_hien": "",
+  "thoi_gian_khoi_cong": "",
+  "thoi_gian_hoan_thanh": "",
+  "thanh_phan_nguon_von": [
+    {
+      "stt": "",
+      "nguon_von": "",
+      "gia_tri": ""
+    }
+  ]
+}
